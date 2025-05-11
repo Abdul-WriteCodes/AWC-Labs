@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>About | AWC Labs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap');
+    body {
+      font-family: 'Orbitron', sans-serif;
+      overflow: auto; /* Ensure the body is scrollable */
+      min-height: 100vh; /* Ensure the body is at least as tall as the viewport */
+    }
+    .glow {
+      text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
+    }
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+    header, section, footer {
+      position: relative;
+      z-index: 1;
+    }
+    .fade-in {
+      animation: fadeIn 1.6s ease-in;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white relative">
+
+  <div id="particles-js"></div>
+
+  <!-- Header -->
+  <header class="flex justify-between items-center px-6 py-4 md:py-6 bg-gray-800 bg-opacity-75">
+    <h1 class="text-lg sm:text-xl md:text-2xl font-bold glow flex items-center gap-2">
+      <i class="fas fa-robot text-cyan-400"></i> AWC Labs
+    </h1>
+    <nav class="hidden md:flex space-x-4 text-sm md:text-base">
+      <a href="index.html" class="hover:text-cyan-400 flex items-center"><i class="fas fa-home mr-1"></i>Home</a>
+      <a href="about.html" class="hover:text-cyan-400 flex items-center"><i class="fas fa-info-circle mr-1"></i>About</a>
+      <a href="project.html" class="hover:text-cyan-400 flex items-center"><i class="fas fa-lightbulb mr-1"></i>Projects</a>
+      <a href="contact.html" class="hover:text-cyan-400 flex items-center"><i class="fas fa-envelope mr-1"></i>Contact</a>
+    </nav>
+    <button id="menuBtn" class="md:hidden text-cyan-400 focus:outline-none text-2xl">
+      <i class="fas fa-bars"></i>
+    </button>
+  </header>
+
+  <!-- Mobile Navigation -->
+  <nav id="mobileMenu" class="hidden md:hidden flex-col space-y-6 p-10 bg-gray-900 bg-opacity-95 fixed top-0 left-0 w-full h-full text-center z-50">
+    <a href="index.html" class="hover:text-cyan-400 text-xl"><i class="fas fa-home mr-2"></i>Home</a>
+    <a href="about.html" class="hover:text-cyan-400 text-xl"><i class="fas fa-info-circle mr-2"></i>About</a>
+    <a href="project.html" class="hover:text-cyan-400 text-xl"><i class="fas fa-lightbulb mr-2"></i>Projects</a>
+    <a href="contact.html" class="hover:text-cyan-400 text-xl"><i class="fas fa-envelope mr-2"></i>Contact</a>
+  </nav>
+
+  <!-- About Section -->
+  <section class="py-16 px-4 sm:px-6 md:px-10 text-center fade-in">
+    <div class="max-w-4xl mx-auto rounded-2xl p-6 sm:p-10 md:p-14 bg-black bg-opacity-40 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_30px_rgba(0,255,255,0.15)]">
+      <h2 class="text-3xl sm:text-5xl md:text-6xl font-extrabold mb-8 glow text-cyan-300 animate-pulse">
+        <i class="fas fa-robot mr-3"></i>About AWC Labs
+      </h2>
+      <p class="text-base sm:text-lg md:text-xl text-gray-100 font-light mb-6 tracking-wide leading-relaxed">
+        AWC Labs</span> is where AI is blended with innovation to develop intelligent and smart systems for present and future use, leaving a lasting sustainable impact in the real world.
+      </p>
+      <p class="text-base sm:text-lg md:text-xl font-medium text-cyan-200 mb-6">
+        We are committed to developing a suite of AI/ML-powered solutions across key sectors including:
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-white text-base md:text-lg font-semibold">
+        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
+          <i class="fas fa-heartbeat text-green-400 mr-2"></i>Healthcare
+        </div>
+        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
+          <i class="fas fa-graduation-cap text-red-400 mr-2"></i>Education
+        </div>
+        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
+          <i class="fas fa-coins text-yellow-400 mr-2"></i>Finance
+        </div>
+        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
+          <i class="fas fa-industry text-navy-400 mr-2"></i>Manufacturing
+        </div>
+        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
+          <i class="fas fa-store text-purple-400 mr-2"></i>Retail
+        </div>
+        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
+          <i class="fas fa-shopping-cart text-indigo-400 mr-2"></i>e-Commerce
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="text-center py-6 bg-gray-800 bg-opacity-75 text-sm">
+    &copy; 2025 <i class="text-cyan-400"></i> AWC Labs. All rights reserved.
+  </footer>
+
+  <!-- Particle Background Script -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script>
+    particlesJS('particles-js', {
+      particles: {
+        number: { value: 80 },
+        color: { value: "#00f0ff" },
+        shape: { type: "circle" },
+        opacity: { value: 0.5 },
+        size: { value: 3, random: true },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: "#00f0ff",
+          opacity: 0.4,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 1,
+          direction: "none",
+          random: false,
+          straight: false,
+          out_mode: "out",
+          bounce: false
+        }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: {
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" },
+          resize: true
+        },
+        modes: {
+          repulse: { distance: 100, duration: 0.4 },
+          push: { particles_nb: 4 }
+        }
+      },
+      retina_detect: true
+    });
+
+    // Mobile Menu Toggle
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      document.getElementById('mobileMenu').classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>

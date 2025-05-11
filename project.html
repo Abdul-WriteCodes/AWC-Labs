@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Projects | AWC Labs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .glow {
+      text-shadow: 0 0 8px #00f0ff, 0 0 15px #00f0ff, 0 0 20px #00f0ff;
+    }
+
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+
+    header, section, footer {
+      position: relative;
+      z-index: 1;
+    }
+
+    .standard-text-content {
+      font-family: 'Open Sans', Arial, sans-serif;
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+
+    .project-card-title {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+    }
+
+    .content-card {
+      background-color: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(55, 65, 81, 0.4);
+      transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+    }
+
+    .content-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 240, 255, 0.15), 0 0 30px rgba(0, 240, 255, 0.1);
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 20px;
+      text-align: center;
+      background-color: rgba(17, 24, 39, 0.85);
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-200 relative overflow-x-hidden">
+
+  <div id="particles-js"></div>
+
+  <header class="p-5 md:p-6 bg-gray-800 bg-opacity-70 shadow-lg">
+    <div class="flex items-center justify-between">
+      <a href="index.html" class="text-xl md:text-2xl font-bold glow tracking-wider">AWC LABS</a>
+      <button id="menuBtn" class="md:hidden text-cyan-400 focus:outline-none">
+        ☰
+      </button>
+    </div>
+    <nav id="menu" class="hidden md:flex flex-col md:flex-row mt-3 md:mt-0 md:space-x-5 space-y-2 md:space-y-0">
+      <a href="index.html" class="text-sm md:text-base hover:text-cyan-400">Home</a>
+      <a href="about.html" class="text-sm md:text-base hover:text-cyan-400">About</a>
+      <a href="project.html" class="text-sm md:text-base text-cyan-400 font-semibold border-b-2 border-cyan-400 pb-1">Projects</a>
+      <a href="contact.html" class="text-sm md:text-base hover:text-cyan-400">Contact</a>
+    </nav>
+  </header>
+
+  <section class="py-12 md:py-20 px-4">
+    <div class="max-w-5xl mx-auto text-center">
+      <h2 class="text-3xl md:text-4xl font-bold mb-10 md:mb-16 glow text-white">Explore our AI/ML Projects & Products</h2>
+	<p class="text-sm md:text-base text-gray-300 mb-6">
+  Driven by data & powered by Innovation — Everything we build is designed to solve today’s challenges and re-imagine tomorrow
+</p>
+
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-10">
+        
+        <!-- Card Template -->
+        <div class="content-card p-6 md:p-8 rounded-xl flex flex-col text-left">
+          <h3 class="project-card-title text-xl md:text-2xl text-cyan-400 mb-3">CaptAI™</h3>
+          <p class="standard-text-content text-gray-300 mb-5 flex-grow">
+            A real-time ML-powered sentiment analysis platform engineered with a dual-model approach for enhanced accuracy. CaptAI™ leverages our proprietary machine learning models, Almirax and Alekxia, to deliver nuanced insights from textual data streams.
+          </p>
+          <div class="mt-auto pt-3">
+            <a href="#" class="inline-block bg-cyan-500 text-white font-semibold px-4 py-2 rounded-md hover:bg-cyan-600 transition-colors duration-300 text-sm">
+              View Live Demo
+            </a>
+          </div>
+        </div>
+
+        
+
+        <div class="content-card p-6 md:p-8 rounded-xl flex flex-col text-left">
+          <h3 class="project-card-title text-xl md:text-2xl text-cyan-400 mb-3">CardioMetrix</h3>
+          <p class="standard-text-content text-gray-300 mb-5 flex-grow">
+			CardioMetrix is being developed as an intelligent system for tracking and analyzing chronic indicators of cardiometabolic disorders, including obesity, diabetes, and hypertension. It is powered by an advanced AI model named MIKASA, designed to analyze patient data, detect risk patterns, alert users and caregivers, and provide personalized support.          </p>
+          <div class="mt-auto pt-3">
+            <a href="#" class="inline-block text-cyan-400 border border-cyan-400 font-semibold px-4 py-2 rounded-md hover:bg-cyan-400 hover:text-gray-900 transition-colors duration-300 text-sm">
+              In Development: View on GitHub
+			  
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center py-8 bg-gray-800 bg-opacity-70 text-sm text-gray-400">
+    &copy; <span id="currentYear"></span> AWC Labs. All Rights Reserved.
+    <script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script>
+    particlesJS('particles-js', {
+      particles: {
+        number: { value: 70, density: { enable: true, value_area: 800 }},
+        color: { value: ["#00f0ff", "#03A9F4"] },
+        shape: { type: "circle" },
+        opacity: { value: 0.3, random: true, anim: { enable: true, speed: 0.5, opacity_min: 0.1, sync: false }},
+        size: { value: 2.5, random: true, anim: { enable: true, speed: 2, size_min: 0.5, sync: false }},
+        line_linked: { enable: true, distance: 140, color: "#00f0ff", opacity: 0.2, width: 1 },
+        move: { enable: true, speed: 0.7, direction: "none", random: true, straight: false, out_mode: "out", bounce: false }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: {
+          onhover: { enable: true, mode: "grab" },
+          onclick: { enable: true, mode: "push" },
+          resize: true
+        },
+        modes: {
+          grab: { distance: 110, line_opacity: 0.3 },
+          push: { particles_nb: 3 }
+        }
+      },
+      retina_detect: true
+    });
+
+    // Mobile Menu Toggle
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      const menu = document.getElementById('menu');
+      menu.classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>
+
