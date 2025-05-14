@@ -48,9 +48,7 @@
     </h1>
     <nav class="hidden md:flex space-x-4 text-sm md:text-base">
       <a href="index.html" class="hover:text-cyan-400 flex items-center"><i class="fas fa-home mr-1"></i>Home</a>
-      <a href="about.html" class="hover:text-cyan-400 flex items-center"><i class="fas fa-info-circle mr-1"></i>About</a>
       <a href="project.html" class="hover:text-cyan-400 flex items-center"><i class="fas fa-lightbulb mr-1"></i>Projects</a>
-      <a href="contact.html" class="hover:text-cyan-400 flex items-center"><i class="fas fa-envelope mr-1"></i>Contact</a>
     </nav>
     <button id="menuBtn" class="md:hidden text-cyan-400 focus:outline-none text-2xl">
       <i class="fas fa-bars"></i>
@@ -60,45 +58,74 @@
   <!-- Mobile Navigation -->
   <nav id="mobileMenu" class="hidden md:hidden flex-col space-y-6 p-10 bg-gray-900 bg-opacity-95 fixed top-0 left-0 w-full h-full text-center z-50">
     <a href="index.html" class="hover:text-cyan-400 text-xl"><i class="fas fa-home mr-2"></i>Home</a>
-    <a href="about.html" class="hover:text-cyan-400 text-xl"><i class="fas fa-info-circle mr-2"></i>About</a>
     <a href="project.html" class="hover:text-cyan-400 text-xl"><i class="fas fa-lightbulb mr-2"></i>Projects</a>
-    <a href="contact.html" class="hover:text-cyan-400 text-xl"><i class="fas fa-envelope mr-2"></i>Contact</a>
   </nav>
 
-  <!-- About Section -->
-  <section class="py-16 px-4 sm:px-6 md:px-10 text-center fade-in">
-    <div class="max-w-4xl mx-auto rounded-2xl p-6 sm:p-10 md:p-14 bg-black bg-opacity-40 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_30px_rgba(0,255,255,0.15)]">
-      <h2 class="text-3xl sm:text-5xl md:text-6xl font-extrabold mb-8 glow text-cyan-300 animate-pulse">
-        <i class="fas fa-robot mr-3"></i>About AWC Labs
-      </h2>
-      <p class="text-base sm:text-lg md:text-xl text-gray-100 font-light mb-6 tracking-wide leading-relaxed">
-        AWC Labs</span> is where AI is blended with innovation to develop intelligent and smart systems for present and future use, leaving a lasting sustainable impact in the real world.
+  <section class="py-16 px-4 sm:px-6 md:px-10 fade-in">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <!-- About Card -->
+    <div class="bg-black bg-opacity-40 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_30px_rgba(0,255,255,0.15)] rounded-2xl p-6 text-center text-white">
+      <h3 class="text-2xl font-bold text-cyan-300 mb-4"><i class="fas fa-robot mr-2"></i>About Us</h3>
+      <p class="text-base text-gray-100 leading-relaxed">
+        AWC Labs is where AI meets innovation to build intelligent systems that shape a sustainable future. We're passionate about crafting real-world solutions that leave lasting impact.
       </p>
-      <p class="text-base sm:text-lg md:text-xl font-medium text-cyan-200 mb-6">
-        We are committed to developing a suite of AI/ML-powered solutions across key sectors including:
+    </div>
+
+    <!-- What We Do Card -->
+    <div class="bg-black bg-opacity-40 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_30px_rgba(0,255,255,0.15)] rounded-2xl p-6 text-center text-white">
+      <h3 class="text-2xl font-bold text-cyan-300 mb-4"><i class="fas fa-cogs mr-2"></i>What We Do</h3>
+      <p class="text-base text-gray-100 leading-relaxed mb-3">
+        We build and deploy AI/ML-powered solutions across sectors like healthcare, education, finance, and more.
       </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-white text-base md:text-lg font-semibold">
-        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
-          <i class="fas fa-heartbeat text-green-400 mr-2"></i>Healthcare
-        </div>
-        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
-          <i class="fas fa-graduation-cap text-red-400 mr-2"></i>Education
-        </div>
-        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
-          <i class="fas fa-coins text-yellow-400 mr-2"></i>Finance
-        </div>
-        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
-          <i class="fas fa-industry text-navy-400 mr-2"></i>Manufacturing
-        </div>
-        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
-          <i class="fas fa-store text-purple-400 mr-2"></i>Retail
-        </div>
-        <div class="bg-gray-800 bg-opacity-60 rounded-lg py-3 px-4 flex justify-center items-center hover:scale-105 transition">
-          <i class="fas fa-shopping-cart text-indigo-400 mr-2"></i>e-Commerce
-        </div>
+      <ul class="text-sm font-medium text-cyan-200 space-y-1">
+        <li><i class="fas fa-check-circle mr-1 text-green-400"></i> Predictive AI Systems</li>
+        <li><i class="fas fa-check-circle mr-1 text-green-400"></i> Intelligent Automation</li>
+        <li><i class="fas fa-check-circle mr-1 text-green-400"></i> Real-time Analytics</li>
+      </ul>
+    </div>
+
+    <!-- Who We Serve Card -->
+    <div class="bg-black bg-opacity-40 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_30px_rgba(0,255,255,0.15)] rounded-2xl p-6 text-center text-white">
+      <h3 class="text-2xl font-bold text-cyan-300 mb-4"><i class="fas fa-users mr-2"></i>Who We Serve</h3>
+      <div class="grid grid-cols-2 gap-3 text-sm font-semibold">
+        <div class="bg-gray-800 bg-opacity-60 rounded py-2 px-3 flex items-center justify-center"><i class="fas fa-heartbeat text-green-400 mr-2"></i>Healthcare</div>
+        <div class="bg-gray-800 bg-opacity-60 rounded py-2 px-3 flex items-center justify-center"><i class="fas fa-graduation-cap text-red-400 mr-2"></i>Education</div>
+        <div class="bg-gray-800 bg-opacity-60 rounded py-2 px-3 flex items-center justify-center"><i class="fas fa-coins text-yellow-400 mr-2"></i>Finance</div>
+        <div class="bg-gray-800 bg-opacity-60 rounded py-2 px-3 flex items-center justify-center"><i class="fas fa-store text-purple-400 mr-2"></i>Retail</div>
+        <div class="bg-gray-800 bg-opacity-60 rounded py-2 px-3 flex items-center justify-center"><i class="fas fa-industry text-blue-400 mr-2"></i>Manufacturing</div>
+        <div class="bg-gray-800 bg-opacity-60 rounded py-2 px-3 flex items-center justify-center"><i class="fas fa-shopping-cart text-indigo-400 mr-2"></i>e-Commerce</div>
       </div>
     </div>
-  </section>
+
+   
+    <!-- Contact Card -->
+<div class="bg-black bg-opacity-40 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_30px_rgba(0,255,255,0.15)] rounded-2xl p-6 text-center text-white">
+  <h3 class="text-2xl font-bold text-cyan-300 mb-4"><i class="fas fa-envelope mr-2"></i>Contact Us</h3>
+  <p class="text-base text-gray-100 mb-4">Got questions or ideas? Reach out!</p>
+  <div class="text-sm text-cyan-200 space-y-2">
+    <p>
+      <a href="mailto:abdulwrite77@gmail.com" class="hover:underline hover:text-cyan-400 transition-colors duration-200">
+        <i class="fas fa-envelope-open-text mr-2 text-red-400"></i>E-Mail
+      </a>
+    </p>
+    <p>
+      <a href="https://wa.me/2348096506034" target="_blank" rel="noopener noreferrer" class="hover:underline hover:text-pink-400 transition-colors duration-200">
+        <i class="fab fa-whatsapp mr-2 text-green-400"></i>WhatsApp
+      </a>
+    </p>
+    <p>
+      <a href="https://linkedin.com/in/abdul-azeez-olohunjuwon-anafi-baa64a199" target="_blank" rel="noopener noreferrer" class="hover:underline hover:text-blue-400 transition-colors duration-200">
+        <i class="fab fa-linkedin mr-2 text-blue-400"></i>LiinkdIn
+      </a>
+    </p>
+  </div>
+</div>
+
+
+  </div>
+</section>
+
 
   <!-- Footer -->
   <footer class="text-center py-6 bg-gray-800 bg-opacity-75 text-sm">

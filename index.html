@@ -10,10 +10,12 @@
     /* Custom fonts and animations */
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
 
-    body {
+	body {
       font-family: 'Orbitron', sans-serif;
+      overflow: auto; /* Ensure the body is scrollable */
+      min-height: 100vh; /* Ensure the body is at least as tall as the viewport */
     }
-
+	
     .glow {
       text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
     }
@@ -30,6 +32,7 @@
     nav a {
       transition: color 0.3s ease;
     }
+	
   </style>
 </head>
 <body class="bg-gray-900 text-white relative overflow-hidden">
@@ -39,43 +42,17 @@
 
   <!-- Navbar -->
   <header class="flex justify-between items-center p-6 bg-gray-800 bg-opacity-75">
-    <h1 class="text-xl md:text-2xl font-bold glow">AWC Labs
+    <h1 class="text-xl md:text-2xl font-bold glow">
+	AWC Labs: Welcome!<i class="fas fa-smile mr-2"></i>
 	</h1>
     <nav class="hidden md:flex space-x-4">
       <a href="index.html" class="hover:text-cyan-400 flex items-center">
-        <i class="fas fa-home mr-2"></i>Home
+        <i class="fas fa-rocket mr-2"></i>...Developing Suite of AI Products
       </a>
-      <a href="about.html" class="hover:text-cyan-400 flex items-center">
-        <i class="fas fa-info-circle mr-2"></i>About
-      </a>
-      <a href="project.html" class="hover:text-cyan-400 flex items-center">
-        <i class="fas fa-lightbulb mr-2"></i>Projects
-      </a>
-      <a href="contact.html" class="hover:text-cyan-400 flex items-center">
-        <i class="fas fa-envelope mr-2"></i>Contact
-      </a>
+ 
     </nav>
-    <!-- Mobile Menu Toggle -->
-    <button id="menuBtn" class="md:hidden text-cyan-400 focus:outline-none">
-      ☰
-    </button>
+  
   </header>
-
-  <!-- Mobile Navigation -->
-  <nav id="mobileMenu" class="hidden md:hidden flex-col space-y-4 p-6 bg-gray-800 bg-opacity-75 absolute top-0 left-0 w-full h-full text-center">
-    <a href="index.html" class="hover:text-cyan-400 flex justify-center items-center text-xl">
-      <i class="fas fa-home mr-2"></i>Home
-    </a>
-    <a href="about.html" class="hover:text-cyan-400 flex justify-center items-center text-xl">
-      <i class="fas fa-info-circle mr-2"></i>About
-    </a>
-    <a href="project.html" class="hover:text-cyan-400 flex justify-center items-center text-xl">
-      <i class="fas fa-lightbulb mr-2"></i>Projects
-    </a>
-    <a href="contact.html" class="hover:text-cyan-400 flex justify-center items-center text-xl">
-      <i class="fas fa-envelope mr-2"></i>Contact
-    </a>
-  </nav>
 
   <!-- Hero Section -->
   <section class="text-center py-28 px-4 bg-gradient-to-br from-gray-900 to-black">
@@ -87,11 +64,17 @@
   <p class="text-base sm:text-lg md:text-xl mb-6 max-w-2xl mx-auto">
     ...Engineering Smarter Systems and Solutions for Real World Impact....
   </p>
-    <!-- Card around the Explore Projects Button -->
-    <div class="max-w-md mx-auto bg-gray-1000 bg-opacity-80 rounded-lg shadow-2xl p-8">
-      <a href="project.html" class="bg-gradient-to-r from-yellow-500 via-teal-500 to-green-500 px-6 py-3 rounded-full text-white font-semibold hover:bg-gradient-to-l transition duration-300 ease-in-out">
-        Explore Our Projects <i class="fas fa-robot text-teal-400 mr-2"></i>
-      </a>
+		
+	<!-- Card with Side-by-Side Buttons -->
+	<div class="max-w-4xl mx-auto bg-gray-1000 bg-opacity-80 rounded-lg shadow-2xl p-8">
+	<div class="flex flex-col sm:flex-row justify-center gap-4">
+		<a href="about.html" class="flex-1 text-center bg-gradient-to-r from-yellow-500 via-teal-500 to-green-500 px-6 py-3 rounded-full text-white font-semibold hover:bg-gradient-to-l transition duration-300 ease-in-out">
+      Learn About Us <i class="fas fa-info-circle text-teal-400 ml-2"></i>
+		</a>
+		<a href="project.html" class="flex-1 text-center bg-gradient-to-r from-green-500 via-teal-500 to-yellow-500 px-6 py-3 rounded-full text-white font-semibold hover:bg-gradient-to-l transition duration-300 ease-in-out">
+      Explore Our Projects <i class="fas fa-robot text-teal-400 ml-2"></i>
+		</a>
+	</div>	  
     </div>
   </section>
 
