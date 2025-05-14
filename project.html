@@ -5,6 +5,7 @@
   <title>Projects | AWC Labs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
@@ -79,6 +80,7 @@
     <nav id="menu" class="hidden md:flex flex-col md:flex-row mt-3 md:mt-0 md:space-x-5 space-y-2 md:space-y-0">
       <a href="index.html" class="text-sm md:text-base hover:text-cyan-400">Home</a>
       <a href="about.html" class="text-sm md:text-base hover:text-cyan-400">About</a>
+     
     </nav>
   </header>
 
@@ -94,7 +96,7 @@
         
         <!-- Card Template -->
         <div class="content-card p-6 md:p-8 rounded-xl flex flex-col text-left">
-          <h3 class="project-card-title text-xl md:text-2xl text-cyan-400 mb-3">CaptAI™</h3>
+          <h3 class="project-card-title text-xl md:text-2xl glow text-cyan-400 mb-3">CaptAI™</h3>
           <p class="standard-text-content text-gray-300 mb-5 flex-grow">
             A real-time ML-powered sentiment analysis platform engineered with a dual-model approach for enhanced accuracy. CaptAI™ leverages our proprietary machine learning models, Almirax and Alekxia, to deliver nuanced insights from textual data streams.
           </p>
@@ -108,7 +110,7 @@
         
 
         <div class="content-card p-6 md:p-8 rounded-xl flex flex-col text-left">
-          <h3 class="project-card-title text-xl md:text-2xl text-cyan-400 mb-3">CardioMetrix</h3>
+          <h3 class="project-card-title text-xl md:text-2xl glow text-cyan-400 mb-3">CardioMetrix</h3>
           <p class="standard-text-content text-gray-300 mb-5 flex-grow">
 			CardioMetrix is being developed as an intelligent system for tracking and analyzing chronic indicators of cardiometabolic disorders, including obesity, diabetes, and hypertension. It is powered by an advanced AI model named MIKASA, designed to analyze patient data, detect risk patterns, alert users and caregivers, and provide personalized support.          </p>
           <div class="mt-auto pt-3">
@@ -120,9 +122,21 @@
         </div>
 
       </div>
+	  <p class="text-sm md:text-base glow text-cyan-300 mb-6">
+ We appreciate Support for AWC Labs & Our Projects via:
+	</p>
+	<div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+		<a href="https://buymeacoffee.com/abdul_writecodes" class="text-yellow-400 hover:underline flex items-center">
+		  <i class="fas fa-coffee mr-2"></i> Buy us a Coffee
+		</a>
+		<a href="https://selar.com/showlove/awc-labs" class="text-red-400 hover:underline flex items-center">
+		  <i class="fas fa-heart mr-2"></i> Show Love
+		</a>
+	  </div>
     </div>
   </section>
-
+	
+	
   <footer class="text-center py-8 bg-gray-800 bg-opacity-70 text-sm text-gray-400">
     &copy; <span id="currentYear"></span> AWC Labs. All Rights Reserved.
     <script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
