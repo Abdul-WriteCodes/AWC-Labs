@@ -2,117 +2,759 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AWC Labs | Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>AWC Labs | AI Innovation Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
   <style>
-    /* Custom fonts and animations */
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-	body {
-      font-family: 'Orbitron', sans-serif;
-      overflow: auto; /* Ensure the body is scrollable */
-      min-height: 100vh; /* Ensure the body is at least as tall as the viewport */
-    }
-	
-    .glow {
-      text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff;
+    :root {
+      --bg:       #050810;
+      --surface:  #0b0f1e;
+      --border:   rgba(0,240,255,0.10);
+      --cyan:     #00f0ff;
+      --cyan2:    #0af5c8;
+      --amber:    #f5a623;
+      --text:     #c8d6e8;
+      --muted:    #607080;
+      --white:    #eef4ff;
+      --card:     rgba(11,15,30,0.85);
+      --glow:     0 0 14px rgba(0,240,255,0.45);
     }
 
-    /* Particle background */
-    #particles-js {
-      position: absolute;
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── GRID NOISE BACKGROUND ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,240,255,0.07) 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    * { position: relative; z-index: 1; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky; top: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 clamp(1.5rem, 5vw, 4rem);
+      height: 68px;
+      background: rgba(5,8,16,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: 0.05em;
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--cyan); }
+
+    .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+    .nav-links a {
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--cyan); }
+
+    .nav-cta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      padding: 0.45rem 1.2rem;
+      border-radius: 4px;
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      transition: background .2s, color .2s;
+    }
+    .nav-cta:hover { background: var(--cyan); color: var(--bg); }
+
+    .hamburger {
+      display: none;
+      flex-direction: column; gap: 5px;
+      cursor: pointer; background: none; border: none; padding: 4px;
+    }
+    .hamburger span { display: block; width: 24px; height: 2px; background: var(--cyan); border-radius: 2px; transition: .3s; }
+
+    .mobile-menu {
+      display: none;
+      flex-direction: column;
+      background: rgba(5,8,16,0.97);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem clamp(1.5rem, 5vw, 4rem);
+      gap: 1.25rem;
+    }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      transition: color .2s;
+    }
+    .mobile-menu a:last-child { border-bottom: none; }
+    .mobile-menu a:hover { color: var(--cyan); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 92vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: clamp(4rem, 10vw, 8rem) clamp(1.5rem, 5vw, 4rem);
+      gap: 1.5rem;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--cyan2);
+      border: 1px solid rgba(10,245,200,0.25);
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: rgba(10,245,200,0.06);
+    }
+    .hero-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--cyan2);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.4); }
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(3.2rem, 9vw, 7.5rem);
+      font-weight: 800;
+      color: var(--white);
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: transparent;
+      -webkit-text-stroke: 1.5px var(--cyan);
+    }
+
+    .hero-sub {
+      max-width: 540px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.75;
+    }
+
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 0.5rem; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: var(--cyan);
+      color: var(--bg);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.85rem 2rem;
+      border-radius: 6px;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: filter .2s, transform .2s;
+      border: none; cursor: pointer;
+    }
+    .btn-primary:hover { filter: brightness(1.15); transform: translateY(-2px); }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: transparent;
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.85rem 2rem;
+      border-radius: 6px;
+      text-decoration: none;
+      border: 1px solid rgba(200,214,232,0.18);
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-2px); }
+
+    .hero-stats {
+      display: flex; gap: 3rem; flex-wrap: wrap; justify-content: center;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
       width: 100%;
-      height: 100%;
-      z-index: -1;
+      max-width: 600px;
+    }
+    .stat-item { text-align: center; }
+    .stat-number {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--white);
+    }
+    .stat-number span { color: var(--cyan); }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
-    /* Navbar styling */
-    nav a {
-      transition: color 0.3s ease;
+    /* ─── SECTIONS ─── */
+    section { padding: clamp(4rem, 8vw, 7rem) clamp(1.5rem, 5vw, 4rem); }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: clamp(3rem, 5vw, 5rem);
     }
-	
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .section-desc {
+      margin-top: 1rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ─── ABOUT GRID ─── */
+    .about-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .about-cell {
+      padding: 2.5rem;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      transition: background .3s;
+    }
+    .about-cell:hover { background: rgba(0,240,255,0.04); }
+
+    .about-cell-icon {
+      width: 42px; height: 42px;
+      background: rgba(0,240,255,0.08);
+      border: 1px solid rgba(0,240,255,0.2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      color: var(--cyan);
+      margin-bottom: 1.25rem;
+    }
+    .about-cell h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 0.75rem;
+    }
+    .about-cell p { font-size: 0.9rem; color: var(--text); line-height: 1.75; }
+
+    .about-cell-full { grid-column: 1 / -1; }
+
+    /* ─── SPECIALIZATION ─── */
+    .spec-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      max-width: 900px;
+      margin: 2rem auto 0;
+    }
+    .spec-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.9rem 1.25rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: var(--text);
+      font-weight: 500;
+      transition: border-color .2s, color .2s;
+    }
+    .spec-item:hover { border-color: rgba(0,240,255,0.35); color: var(--white); }
+    .spec-item i { color: var(--cyan2); width: 16px; text-align: center; flex-shrink: 0; }
+
+    /* ─── DOMAINS ─── */
+    .domains-grid {
+      display: flex; flex-wrap: wrap; gap: 0.75rem;
+      justify-content: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .domain-chip {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--card);
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .domain-chip:hover { border-color: var(--cyan); color: var(--white); transform: scale(1.04); }
+    .domain-chip i { font-size: 0.85rem; }
+
+    /* ─── PROJECTS ─── */
+    .projects-grid {
+      max-width: 1100px; margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .project-card {
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      display: flex; flex-direction: column;
+      transition: transform .3s, border-color .3s, box-shadow .3s;
+    }
+    .project-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(0,240,255,0.25);
+      box-shadow: 0 16px 40px rgba(0,240,255,0.08);
+    }
+
+    .project-tag {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1.25rem;
+      font-weight: 500;
+      width: fit-content;
+    }
+    .tag-live { background: rgba(0,245,200,0.12); color: var(--cyan2); border: 1px solid rgba(0,245,200,0.25); }
+    .tag-dev  { background: rgba(3,169,244,0.12); color: #3bbbf5; border: 1px solid rgba(3,169,244,0.25); }
+    .tag-proto{ background: rgba(245,166,35,0.12); color: var(--amber); border: 1px solid rgba(245,166,35,0.25); }
+
+    .project-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+    }
+    .project-card p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.75;
+      flex-grow: 1;
+    }
+
+    .project-card-footer {
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .project-link {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      transition: gap .2s;
+    }
+    .project-link:hover { gap: 0.8rem; }
+    .link-live  { color: var(--cyan2); }
+    .link-dev   { color: #3bbbf5; }
+    .link-proto { color: var(--muted); pointer-events: none; }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      max-width: 1100px;
+      margin: 0 auto;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    /* ─── CONTACT ─── */
+    .contact-wrapper {
+      max-width: 700px; margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: clamp(2rem, 5vw, 3.5rem);
+      text-align: center;
+    }
+    .contact-wrapper p {
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+    .contact-links {
+      display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;
+      margin-top: 2rem;
+    }
+    .contact-link {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      padding: 0.75rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--text);
+      background: rgba(255,255,255,0.03);
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .contact-link:hover { transform: translateY(-3px); }
+    .contact-link.email:hover  { border-color: #ff6b6b; color: #ff6b6b; }
+    .contact-link.whatsapp:hover { border-color: #25d366; color: #25d366; }
+    .contact-link.linkedin:hover { border-color: #0077b5; color: #0077b5; }
+    .contact-link.facebook:hover { border-color: #1877f2; color: #1877f2; }
+
+    /* ─── SUPPORT ─── */
+    .support-row {
+      display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;
+      margin-top: 2.5rem;
+    }
+    .support-link {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.82rem; font-weight: 600;
+      text-decoration: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: 999px;
+      transition: opacity .2s;
+    }
+    .support-link:hover { opacity: 0.8; }
+    .support-coffee { background: rgba(255,216,87,0.1); color: #ffd857; border: 1px solid rgba(255,216,87,0.25); }
+    .support-selar  { background: rgba(255,90,90,0.1); color: #ff7b7b; border: 1px solid rgba(255,90,90,0.25); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center;
+      padding: 2rem clamp(1.5rem, 5vw, 4rem);
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    footer span { color: var(--cyan); }
+
+    /* ─── FADE-IN ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; }
+      .about-grid { grid-template-columns: 1fr; }
+      .about-cell-full { grid-column: auto; }
+      .hero-stats { gap: 2rem; }
+    }
   </style>
 </head>
-<body class="bg-gray-900 text-white relative overflow-hidden">
 
-  <!-- Particle Background -->
-  <div id="particles-js"></div>
+<body>
 
-  <!-- Navbar -->
-  <header class="flex justify-between items-center p-6 bg-gray-800 bg-opacity-75">
-    <h1 class="text-xl md:text-2xl font-bold glow">
-	AWC Labs: Welcome!<i class="fas fa-smile mr-2"></i>
-	</h1>
-    <nav class="hidden md:flex space-x-4">
-      <a href="index.html" class="hover:text-cyan-400 flex items-center">
-        <i class="fas fa-rocket mr-2"></i>...Developing Suite of AI Products
-      </a>
- 
-    </nav>
-  
+  <!-- ── NAV ── -->
+  <nav>
+    <a class="nav-logo" href="#">AWC<span>.</span>Labs</a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <a class="nav-cta" href="#contact">Get in Touch →</a>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#about">About</a>
+    <a href="#projects">Projects</a>
+    <a href="#contact">Contact</a>
+  </div>
+
+  <!-- ── HERO ── -->
+  <header class="hero">
+    <div class="hero-badge">AI Innovation Studio — Lagos, Nigeria</div>
+    <h1>Intelligent<br>Systems for<br><em>Real Impact</em></h1>
+    <p class="hero-sub">AWC Labs builds and delivers AI/ML-powered systems, products, and platforms—bridging the gap between cutting-edge research and real-world deployment.</p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="#projects"><i class="fas fa-rocket"></i> Explore Projects</a>
+      <a class="btn-ghost" href="#about"><i class="fas fa-info-circle"></i> Learn About Us</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-number">5<span>+</span></div>
+        <div class="stat-label">Active Projects</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">6<span>+</span></div>
+        <div class="stat-label">Domains Served</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">∞</div>
+        <div class="stat-label">Innovation Drive</div>
+      </div>
+    </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="text-center py-28 px-4 bg-gradient-to-br from-gray-900 to-black">
-  <h2 class="text-5xl sm:text-6xl md:text-7xl font-extrabold mb-4 glow">
-  AWC Labs
-  <i class="fas fa-flask-vial gold-yellow-400 ml-2"></i>
-</h2>
+  <!-- ── ABOUT ── -->
+  <section id="about">
+    <div class="section-header reveal">
+      <span class="section-label">// who we are</span>
+      <h2 class="section-title">Built Around AI. Focused on People.</h2>
+      <p class="section-desc">We combine machine intelligence with human-centred design to solve problems that matter.</p>
+    </div>
 
-  <p class="text-base sm:text-lg md:text-xl mb-6 max-w-2xl mx-auto">
-    ...Developing AI-powered Systems and Solutions for Real World Impact....
-  </p>
-		
-	<!-- Card with Side-by-Side Buttons -->
-	<div class="max-w-4xl mx-auto bg-gray-1000 bg-opacity-80 rounded-lg shadow-2xl p-8">
-	<div class="flex flex-col sm:flex-row justify-center gap-4">
-		<a href="about.html" class="flex-1 text-center bg-gradient-to-r from-yellow-500 via-teal-500 to-green-500 px-6 py-3 rounded-full text-white font-semibold hover:bg-gradient-to-l transition duration-300 ease-in-out" style="text-shadow: 0 0 5px #00ffe7, 0 0 10px #00ffe7;">
-      Learn About Us <i class="fas fa-info-circle text-teal-400 ml-2"></i>
-		</a>
-		<a href="project.html" class="flex-1 text-center bg-gradient-to-r from-green-500 via-teal-500 to-yellow-500 px-6 py-3 rounded-full text-white font-semibold hover:bg-gradient-to-l transition duration-300 ease-in-out" style="text-shadow: 0 0 5px #00ffe7, 0 0 10px #00ffe7;">
-      Explore Our Projects <i class="fas fa-rocket text-teal-400 ml-2"></i>
-		</a>
-	</div>	  
+    <div class="about-grid reveal">
+      <div class="about-cell">
+        <div class="about-cell-icon"><i class="fas fa-bullseye"></i></div>
+        <h3>Our Mission</h3>
+        <p>To create AI-powered systems and solutions for individuals and businesses—helping them overcome everyday challenges, operate more efficiently, and build sustainable long-term operations.</p>
+      </div>
+      <div class="about-cell">
+        <div class="about-cell-icon"><i class="fas fa-eye"></i></div>
+        <h3>Our Vision</h3>
+        <p>To be at the forefront of AI-driven global transformation, delivering cutting-edge solutions that shape a smarter, more equitable future for everyone.</p>
+      </div>
+      <div class="about-cell about-cell-full">
+        <div class="about-cell-icon"><i class="fas fa-flask"></i></div>
+        <h3>What We Do</h3>
+        <p>At AWC Labs we are building and delivering both traditional and advanced AI solutions—from intelligent systems and smart products to data-driven platforms. Every solution is engineered to solve complex challenges and create lasting value. Our core strengths span the full AI spectrum:</p>
+        <div class="spec-list" style="margin-top:1.5rem;">
+          <div class="spec-item"><i class="fas fa-check-circle"></i> End-to-End Machine Learning</div>
+          <div class="spec-item"><i class="fas fa-check-circle"></i> End-to-End Deep Learning</div>
+          <div class="spec-item"><i class="fas fa-check-circle"></i> Natural Language Processing</div>
+          <div class="spec-item"><i class="fas fa-check-circle"></i> Generative AI & LLM Integration</div>
+          <div class="spec-item"><i class="fas fa-check-circle"></i> AI & Embedded Technologies</div>
+          <div class="spec-item"><i class="fas fa-check-circle"></i> AI Research & Innovation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Domains -->
+    <div style="margin-top:4rem;" class="reveal">
+      <div class="section-header" style="margin-bottom:2rem;">
+        <span class="section-label">// where we operate</span>
+        <h2 class="section-title" style="font-size:clamp(1.5rem,3vw,2.2rem);">Domains We Serve</h2>
+      </div>
+      <div class="domains-grid">
+        <div class="domain-chip"><i class="fas fa-heartbeat" style="color:#4ade80"></i> Healthcare</div>
+        <div class="domain-chip"><i class="fas fa-graduation-cap" style="color:#f87171"></i> Education</div>
+        <div class="domain-chip"><i class="fas fa-coins" style="color:#facc15"></i> Finance</div>
+        <div class="domain-chip"><i class="fas fa-store" style="color:#c084fc"></i> Retail</div>
+        <div class="domain-chip"><i class="fas fa-industry" style="color:#60a5fa"></i> Manufacturing</div>
+        <div class="domain-chip"><i class="fas fa-shopping-cart" style="color:#818cf8"></i> e-Commerce</div>
+      </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="text-center py-6 bg-gray-800 text-sm">
-    &copy; 2025 AWC Labs. All rights reserved.
+  <div class="divider"></div>
+
+  <!-- ── PROJECTS ── -->
+  <section id="projects">
+    <div class="section-header reveal">
+      <span class="section-label">// what we're building</span>
+      <h2 class="section-title">Projects & Products</h2>
+      <p class="section-desc">Driven by data. Powered by innovation. Everything we build is designed to solve today's challenges and reimagine tomorrow.</p>
+    </div>
+
+    <div class="projects-grid">
+      <!-- CaptAI -->
+      <div class="project-card reveal">
+        <span class="project-tag tag-live">● Live</span>
+        <h3>CaptAI™</h3>
+        <p>A real-time ML-powered sentiment analysis platform engineered with a dual-model approach for enhanced accuracy. Leverages proprietary models Almirax and Alekxia to deliver nuanced insights from textual data streams.</p>
+        <div class="project-card-footer">
+          <!-- ADD YOUR LINK HERE -->
+          <a href="https://captai-wrujx9xkeqvoer3xy7mrrq.streamlit.app/" class="project-link link-live" target="_blank">
+            <i class="fas fa-external-link-alt"></i> View Live Demo →
+          </a>
+        </div>
+      </div>
+
+      <!-- Vitalyx-GPT -->
+      <div class="project-card reveal">
+        <span class="project-tag tag-dev">⬡ In Development</span>
+        <h3>Vitalyx-GPT</h3>
+        <p>An intelligent system for tracking and analyzing chronic indicators of cardiometabolic disorders—obesity, diabetes, hypertension. Powered by rule-based heuristics and LLM to alert risk patterns and provide conversational health support.</p>
+        <div class="project-card-footer">
+          <!-- ADD YOUR LINK HERE -->
+          <a href="https://github.com/Abdul-WriteCodes/Vitalyx-GPT" class="project-link link-dev" target="_blank">
+            <i class="fab fa-github"></i> View on GitHub →
+          </a>
+        </div>
+      </div>
+
+      <!-- EcoBudget -->
+      <div class="project-card reveal">
+        <span class="project-tag tag-proto">◎ Prototype Coming</span>
+        <h3>EcoBudget</h3>
+        <p>An AI-powered personal carbon pricing and environmental cost estimator. Enables users to estimate carbon footprint across energy, transportation, heating, and cooking fuels—helping make environmentally conscious decisions.</p>
+        <div class="project-card-footer">
+          <!-- ADD YOUR LINK HERE -->
+          <span class="project-link link-proto"><i class="fas fa-clock"></i> Coming Soon</span>
+        </div>
+      </div>
+
+      <!-- Alchemia-GPT -->
+      <div class="project-card reveal">
+        <span class="project-tag tag-proto">◎ Prototype Coming</span>
+        <h3>Alchemia-GPT</h3>
+        <p>An LLM-powered intelligent system for drug design and development. Suggests potential drug targets, proposes novel molecules, evaluates properties, and recommends synthetic routes—accelerating pharmaceutical innovation.</p>
+        <div class="project-card-footer">
+          <!-- ADD YOUR LINK HERE -->
+          <span class="project-link link-proto"><i class="fas fa-clock"></i> Coming Soon</span>
+        </div>
+      </div>
+
+      <!-- ForekastAI -->
+      <div class="project-card reveal">
+        <span class="project-tag tag-proto">◎ Prototype Coming</span>
+        <h3>ForekastAI</h3>
+        <p>A machine learning-powered asset valuation and future worth estimation system. Analyzes current asset values, performs scenario analysis, and predicts future worth using historical trends and economic indicators.</p>
+        <div class="project-card-footer">
+          <!-- ADD YOUR LINK HERE -->
+          <span class="project-link link-proto"><i class="fas fa-clock"></i> Coming Soon</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── CONTACT ── -->
+  <section id="contact">
+    <div class="section-header reveal">
+      <span class="section-label">// get in touch</span>
+      <h2 class="section-title">Connect & Collaborate</h2>
+    </div>
+    <div class="contact-wrapper reveal">
+      <p>Got questions, ideas, or want to invest? We'd love to hear from you.</p>
+      <a class="btn-primary" href="mailto:abdulwrite77@gmail.com" style="display:inline-flex;margin:0 auto;">
+        <!-- ADD YOUR EMAIL CTA HERE -->
+        <i class="fas fa-paper-plane"></i> Send Us a Message
+      </a>
+      <div class="contact-links">
+        <!-- ADD / EDIT YOUR CONTACT LINKS BELOW -->
+        <a class="contact-link email" href="mailto:abdulwrite77@gmail.com"><i class="fas fa-envelope"></i> Email</a>
+        <a class="contact-link whatsapp" href="https://wa.me/2348096506034" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+        <a class="contact-link linkedin" href="https://linkedin.com/company/awc-labs/" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>
+        <a class="contact-link facebook" href="https://web.facebook.com/AWClabs07" target="_blank"><i class="fab fa-facebook"></i> Facebook</a>
+      </div>
+
+      <div style="margin-top:2.5rem; padding-top:2rem; border-top:1px solid var(--border);">
+        <p style="font-size:0.82rem; color:var(--muted); margin-bottom:0.5rem;">
+          <i class="fas fa-handshake" style="color:var(--cyan); margin-right:0.4rem;"></i>
+          We welcome investors & collaborators. Support AWC Labs via:
+        </p>
+        <div class="support-row">
+          <a class="support-link support-coffee" href="https://buymeacoffee.com/abdul_writecodes" target="_blank"><i class="fas fa-coffee"></i> Buy Me a Coffee</a>
+          <a class="support-link support-selar" href="https://selar.com/showlove/awc-labs" target="_blank"><i class="fas fa-heart"></i> Selar</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    &copy; <span id="yr"></span> <span>AWC Labs</span>. All rights reserved. &nbsp;|&nbsp; Building the AI-powered future.
   </footer>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <script>
-    /* Initialize particle background */
-    particlesJS('particles-js', {
-      particles: {
-        number: {
-          value: 80,
-          density: {
-            enable: true,
-            value_area: 800
-          }
-        },
-        size: {
-          value: 3
-        },
-        move: {
-          speed: 1
-        },
-        line_linked: {
-          enable: true
-        }
-      }
-    });
+    // Year
+    document.getElementById('yr').textContent = new Date().getFullYear();
 
-    // Mobile Menu Toggle
-    document.getElementById('menuBtn').addEventListener('click', () => {
-      const menu = document.getElementById('mobileMenu');
-      menu.classList.toggle('hidden');
-    });
+    // Mobile menu
+    const ham = document.getElementById('hamburger');
+    const mob = document.getElementById('mobileMenu');
+    ham.addEventListener('click', () => mob.classList.toggle('open'));
+    mob.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mob.classList.remove('open')));
+
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), i * 80);
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(r => obs.observe(r));
   </script>
 </body>
-</html>
+	</html>
