@@ -1,11 +1,10 @@
 # ============================================================
 #  SME DASHBOARD — app.py
 #  Lightweight Business Intelligence SaaS for SMEs
-#  Stack: Streamlit · Google Sheets · Plotly · Pandas
+#  Stack: Streamlit · Supabase (PostgreSQL) · Plotly · Pandas
 # ============================================================
 
 import streamlit as st
-import gspread
 import bcrypt
 import pandas as pd
 import plotly.express as px
@@ -16,7 +15,7 @@ import secrets
 import string
 from datetime import datetime, timedelta
 from dateutil import parser as dateparser
-from google.oauth2.service_account import Credentials
+from supabase import create_client, Client
 
 # ─────────────────────────────────────────────
 #  APP CONFIG
@@ -28,17 +27,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive",
-]
-
-# Sheet tab names
-SHEET_USERS    = "USERS"
-SHEET_PRODUCTS = "PRODUCTS"
-SHEET_SALES    = "SALES"
-SHEET_EXPENSES = "EXPENSES"
-SHEET_PAYMENTS = "PAYMENTS"   # Platform subscription payment ledger (admin)
+# Supabase table names
+TBL_USERS    = "users"
+TBL_PRODUCTS = "products"
+TBL_SALES    = "sales"
+TBL_EXPENSES = "expenses"
+TBL_PAYMENTS = "payments"
 
 # Plan pricing & Flutterwave links
 PAYMENT_DETAILS = {
@@ -272,140 +266,95 @@ def inject_styles():
 
 
 # ─────────────────────────────────────────────
-#  GOOGLE SHEETS SERVICE LAYER
+#  SUPABASE SERVICE LAYER
 # ─────────────────────────────────────────────
 
 @st.cache_resource(show_spinner=False)
-def get_gspread_client():
-    """Authenticate and return gspread client. Cached for performance."""
-    creds_dict = dict(st.secrets["google_credentials"])
-    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-    creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-    return gspread.authorize(creds)
+def get_supabase() -> Client:
+    """Return authenticated Supabase client. Cached for app lifetime."""
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["service_key"]
+    return create_client(url, key)
 
 
-def get_sheet(tab_name: str):
-    """Return a specific worksheet by tab name."""
-    client   = get_gspread_client()
-    sheet_id = st.secrets["google_sheets"]["sheet_id"]
-    book     = client.open_by_key(sheet_id)
-    return book.worksheet(tab_name)
-
-
-@st.cache_data(ttl=30, show_spinner=False)
-def read_sheet(tab_name: str) -> pd.DataFrame:
-    """Read entire sheet tab into a DataFrame. Cached for 30s; clear after writes."""
+def db_fetch(table: str, filters: dict = None) -> pd.DataFrame:
+    """
+    SELECT * FROM table WHERE filters.
+    filters = {"column": "value"} — all AND equality conditions.
+    Returns DataFrame, empty on error.
+    """
     try:
-        ws      = get_sheet(tab_name)
-        records = ws.get_all_records()
-        return pd.DataFrame(records) if records else pd.DataFrame()
+        sb    = get_supabase()
+        query = sb.table(table).select("*")
+        if filters:
+            for col, val in filters.items():
+                query = query.eq(col, val)
+        res = query.execute()
+        return pd.DataFrame(res.data) if res.data else pd.DataFrame()
     except Exception as e:
-        st.error(f"Error reading {tab_name}: {e}")
+        st.error(f"❌ Error reading {table}: {e}")
         return pd.DataFrame()
 
 
-def append_row(tab_name: str, row: list):
-    """Append a single row to a sheet tab. Validates column count before writing."""
+def db_insert(table: str, row: dict) -> bool:
+    """INSERT a single row dict into table. Returns True on success."""
     try:
-        ws = get_sheet(tab_name)
-        headers = ws.row_values(1)
-        if headers and len(row) != len(headers):
-            st.error(
-                f"❌ Column mismatch on {tab_name}: "
-                f"sheet has {len(headers)} columns but code is sending {len(row)}. "
-                f"Sheet headers: {headers}. "
-                f"Fix your Google Sheet headers to match exactly."
-            )
-            return False
-        ws.append_row(row, value_input_option="USER_ENTERED")
+        sb  = get_supabase()
+        res = sb.table(table).insert(row).execute()
+        st.cache_data.clear()
+        return bool(res.data)
+    except Exception as e:
+        st.error(f"❌ Error inserting into {table}: {e}")
+        return False
+
+
+def db_update(table: str, id_col: str, id_val: str, updates: dict) -> bool:
+    """UPDATE table SET updates WHERE id_col = id_val."""
+    try:
+        sb = get_supabase()
+        sb.table(table).update(updates).eq(id_col, id_val).execute()
         st.cache_data.clear()
         return True
     except Exception as e:
-        st.error(f"❌ Error writing to {tab_name}: {e}")
+        st.error(f"❌ Error updating {table}: {e}")
         return False
 
 
-def update_row(tab_name: str, row_index: int, col_index: int, value):
-    """Update a single cell. row_index and col_index are 1-based."""
+def db_delete(table: str, id_col: str, id_val: str) -> bool:
+    """DELETE FROM table WHERE id_col = id_val."""
     try:
-        ws = get_sheet(tab_name)
-        ws.update_cell(row_index, col_index, value)
+        sb = get_supabase()
+        sb.table(table).delete().eq(id_col, id_val).execute()
+        st.cache_data.clear()
         return True
     except Exception as e:
-        st.error(f"Error updating {tab_name}: {e}")
-        return False
-
-
-def update_row_by_id(tab_name: str, id_col: str, id_val: str, updates: dict):
-    """
-    Find a row where id_col == id_val and update multiple columns.
-    updates = {"column_name": new_value, ...}
-    """
-    try:
-        ws      = get_sheet(tab_name)
-        records = ws.get_all_records()
-        headers = ws.row_values(1)
-
-        for i, rec in enumerate(records):
-            if str(rec.get(id_col)) == str(id_val):
-                row_num = i + 2  # +1 for header, +1 for 1-based index
-                for col_name, new_val in updates.items():
-                    if col_name in headers:
-                        col_num = headers.index(col_name) + 1
-                        ws.update_cell(row_num, col_num, new_val)
-                st.cache_data.clear()   # flush read cache
-                return True
-        return False
-    except Exception as e:
-        st.error(f"Error updating row in {tab_name}: {e}")
-        return False
-
-
-def delete_row_by_id(tab_name: str, id_col: str, id_val: str) -> bool:
-    """Delete a row where id_col == id_val."""
-    try:
-        ws      = get_sheet(tab_name)
-        records = ws.get_all_records()
-        for i, rec in enumerate(records):
-            if str(rec.get(id_col)) == str(id_val):
-                ws.delete_rows(i + 2)
-                return True
-        return False
-    except Exception as e:
-        st.error(f"Error deleting from {tab_name}: {e}")
+        st.error(f"❌ Error deleting from {table}: {e}")
         return False
 
 
 def log_payment(user_id: str, business_name: str, email: str,
-                plan_type: str, amount: float, note: str = ""):
-    """
-    Append a row to the PAYMENTS sheet whenever a subscription is activated
-    or renewed. This is the ground-truth revenue ledger for the platform.
-    Columns: payment_id | user_id | business_name | email |
-             plan_type | amount | payment_date | note
-    """
+                plan_type: str, amount: float, note: str = "") -> bool:
+    """Insert a payment record — ground-truth revenue ledger for the platform."""
     try:
-        row = [
-            gen_id("PAY"),
-            user_id,
-            business_name,
-            email,
-            plan_type,
-            amount,
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            note,
-        ]
-        return append_row(SHEET_PAYMENTS, row)
+        return db_insert(TBL_PAYMENTS, {
+            "payment_id":    gen_id("PAY"),
+            "user_id":       user_id,
+            "business_name": business_name,
+            "email":         email,
+            "plan_type":     plan_type,
+            "amount":        amount,
+            "payment_date":  datetime.now().isoformat(),
+            "note":          note,
+        })
     except Exception:
-        # Payment logging failure should never block the activation flow
         return False
 
 
 @st.cache_data(ttl=30, show_spinner=False)
 def get_payments_df() -> pd.DataFrame:
-    """Read PAYMENTS sheet. Returns empty DataFrame if sheet doesn't exist yet."""
+    """Read payments table. Returns empty DataFrame on error."""
     try:
-        df = read_sheet(SHEET_PAYMENTS)
+        df = db_fetch(TBL_PAYMENTS)
         if df.empty:
             return pd.DataFrame()
         df["amount"]       = pd.to_numeric(df["amount"],       errors="coerce").fillna(0)
@@ -475,11 +424,13 @@ def check_password(plain: str, hashed: str) -> bool:
 
 def get_user_by_email(email: str):
     """Return user dict or None."""
-    df = read_sheet(SHEET_USERS)
-    if df.empty:
+    try:
+        sb  = get_supabase()
+        res = sb.table(TBL_USERS).select("*").ilike("email", email).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        st.error(f"Error fetching user: {e}")
         return None
-    match = df[df["email"].str.lower() == email.lower()]
-    return match.iloc[0].to_dict() if not match.empty else None
 
 
 def is_subscription_active(user: dict) -> bool:
@@ -544,15 +495,23 @@ def signup_user(business_name, full_name, email, password, plan_type):
         start  = ""
         end    = ""
 
-    row = [
-        user_id, business_id, business_name, full_name, email,
-        hash_password(password), "owner", plan_type,
-        status, start, end, now,
-        "no",  # password_reset_requested
-        "",    # reset_requested_at
-        "no",  # must_change_password
-    ]
-    success = append_row(SHEET_USERS, row)
+    success = db_insert(TBL_USERS, {
+        "user_id":                  user_id,
+        "business_id":              business_id,
+        "business_name":            business_name,
+        "full_name":                full_name,
+        "email":                    email,
+        "password_hash":            hash_password(password),
+        "role":                     "owner",
+        "plan_type":                plan_type,
+        "plan_status":              status,
+        "subscription_start":       start if start else None,
+        "subscription_end":         end   if end   else None,
+        "created_at":               now,
+        "password_reset_requested": "no",
+        "reset_requested_at":       None,
+        "must_change_password":     "no",
+    })
     if success:
         return True, "Account created successfully."
     return False, "Failed to create account. Please try again."
@@ -564,7 +523,7 @@ def signup_user(business_name, full_name, email, password, plan_type):
 
 def get_sales_df(business_id: str) -> pd.DataFrame:
     """Return sales DataFrame filtered to this business, with typed columns."""
-    df = read_sheet(SHEET_SALES)
+    df = db_fetch(TBL_SALES)
     if df.empty:
         return pd.DataFrame()
 
@@ -589,12 +548,7 @@ def get_sales_df(business_id: str) -> pd.DataFrame:
 
 
 def get_products_df(business_id: str) -> pd.DataFrame:
-    df = read_sheet(SHEET_PRODUCTS)
-    if df.empty:
-        return pd.DataFrame()
-    if "business_id" not in df.columns:
-        return pd.DataFrame()
-    df = df[df["business_id"].astype(str) == str(business_id)].copy()
+    df = db_fetch(TBL_PRODUCTS, {"business_id": business_id})
     if df.empty:
         return pd.DataFrame()
     df["selling_price"]  = pd.to_numeric(df["selling_price"],  errors="coerce").fillna(0)
@@ -605,12 +559,7 @@ def get_products_df(business_id: str) -> pd.DataFrame:
 
 
 def get_expenses_df(business_id: str) -> pd.DataFrame:
-    df = read_sheet(SHEET_EXPENSES)
-    if df.empty:
-        return pd.DataFrame()
-    if "business_id" not in df.columns:
-        return pd.DataFrame()
-    df = df[df["business_id"].astype(str) == str(business_id)].copy()
+    df = db_fetch(TBL_EXPENSES, {"business_id": business_id})
     if df.empty:
         return pd.DataFrame()
     df["amount"]       = pd.to_numeric(df["amount"],       errors="coerce").fillna(0)
@@ -1149,7 +1098,7 @@ def page_forgot_password():
                 st.error("Please enter your email address.")
             else:
                 email = email.strip().lower()
-                users_df = read_sheet(SHEET_USERS)
+                users_df = db_fetch(TBL_USERS)
                 match = users_df[users_df["email"].str.lower() == email] if not users_df.empty else pd.DataFrame()
 
                 if match.empty:
@@ -1160,11 +1109,8 @@ def page_forgot_password():
                     )
                 else:
                     user_id = match.iloc[0]["user_id"]
-                    ok = update_row_by_id(
-                        SHEET_USERS, "user_id", user_id,
-                        {"password_reset_requested": "yes",
-                         "reset_requested_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                    )
+                    ok = db_update(TBL_USERS, "user_id", user_id, {"password_reset_requested": "yes",
+                         "reset_requested_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
                     st.cache_data.clear()
                     if ok:
                         st.success(
@@ -1227,13 +1173,10 @@ def page_change_password(forced=True):
                 st.error("Passwords do not match.")
             else:
                 hashed = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
-                ok = update_row_by_id(
-                    SHEET_USERS, "user_id", user["user_id"],
-                    {
+                ok = db_update(TBL_USERS, "user_id", user["user_id"], {
                         "password_hash":        hashed,
                         "must_change_password": "no",
-                    }
-                )
+                    })
                 st.cache_data.clear()
                 if ok:
                     # Update session so the flag is cleared
@@ -1561,34 +1504,26 @@ def page_record_sale():
                 snap_cost_total   = snap_cost_price * _quantity
                 snap_gross_profit = snap_total - snap_cost_total
 
-                # Write sale row — columns must match SALES sheet headers exactly:
-                # sale_id | business_id | product_id | product_name | quantity |
-                # unit_price | total_amount | cost_total | gross_profit |
-                # payment_method | sale_date | recorded_by
-                sale_row = [
-                    sale_id,
-                    business_id,
-                    _product["product_id"],
-                    _product["product_name"],
-                    _quantity,
-                    snap_unit_price,
-                    snap_total,
-                    snap_cost_total,
-                    snap_gross_profit,
-                    _payment,
-                    now_str,
-                    user.get("full_name", user.get("email", "")),
-                ]
-                sale_ok = append_row(SHEET_SALES, sale_row)
+                # Write sale record to Supabase
+                sale_ok = db_insert(TBL_SALES, {
+                    "sale_id":        sale_id,
+                    "business_id":    business_id,
+                    "product_id":     _product["product_id"],
+                    "product_name":   _product["product_name"],
+                    "quantity":       _quantity,
+                    "unit_price":     snap_unit_price,
+                    "total_amount":   snap_total,
+                    "cost_total":     snap_cost_total,
+                    "gross_profit":   snap_gross_profit,
+                    "payment_method": _payment,
+                    "sale_date":      datetime.now().isoformat(),
+                    "recorded_by":    user.get("full_name", user.get("email", "")),
+                })
 
                 if sale_ok:
                     # Deduct stock immediately after confirmed write
                     new_stock = current_stock - _quantity
-                    stock_ok  = update_row_by_id(
-                        SHEET_PRODUCTS, "product_id",
-                        _product["product_id"],
-                        {"stock_quantity": new_stock}
-                    )
+                    stock_ok  = db_update(TBL_PRODUCTS, "product_id", _product["product_id"], {"stock_quantity": new_stock})
                     # Clear cache so next page load reads fresh data
                     st.cache_data.clear()
 
@@ -1709,19 +1644,16 @@ def page_products():
                         save = st.form_submit_button("💾 Save Changes", type="primary")
 
                     if save:
-                        ok = update_row_by_id(
-                            SHEET_PRODUCTS, "product_id", row["product_id"],
-                            {
+                        ok = db_update(TBL_PRODUCTS, "product_id", row["product_id"], {
                                 "product_name": new_name, "category": new_cat,
                                 "cost_price": new_cost, "selling_price": new_sell,
                                 "reorder_level": new_reorder,
-                            }
-                        )
+                            })
                         st.success("Product updated!") if ok else st.error("Update failed.")
                         st.rerun()
 
                     if st.button(f"🗑️ Delete {row['product_name']}", key=f"del_{row['product_id']}"):
-                        ok = delete_row_by_id(SHEET_PRODUCTS, "product_id", row["product_id"])
+                        ok = db_delete(TBL_PRODUCTS, "product_id", row["product_id"])
                         st.success("Product deleted.") if ok else st.error("Delete failed.")
                         st.rerun()
 
@@ -1753,13 +1685,17 @@ def page_products():
                 st.error("Please fill in all required fields and ensure selling price > 0.")
             else:
                 product_id = gen_id("PRD")
-                now_str    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                row = [
-                    product_id, business_id, prod_name.strip(),
-                    category.strip(), cost_price, sell_price,
-                    stock_qty, reorder_lvl, now_str
-                ]
-                ok = append_row(SHEET_PRODUCTS, row)
+                ok = db_insert(TBL_PRODUCTS, {
+                    "product_id":     product_id,
+                    "business_id":    business_id,
+                    "product_name":   prod_name.strip(),
+                    "category":       category.strip(),
+                    "cost_price":     cost_price,
+                    "selling_price":  sell_price,
+                    "stock_quantity": stock_qty,
+                    "reorder_level":  reorder_lvl,
+                    "created_at":     datetime.now().isoformat(),
+                })
                 if ok:
                     st.success(f"✅ '{prod_name}' added to your inventory!")
                     st.rerun()
@@ -1787,11 +1723,7 @@ def page_products():
 
             if submitted:
                 new_qty = int(selected_product["stock_quantity"]) + add_qty
-                ok = update_row_by_id(
-                    SHEET_PRODUCTS, "product_id",
-                    selected_product["product_id"],
-                    {"stock_quantity": new_qty}
-                )
+                ok = db_update(TBL_PRODUCTS, "product_id", selected_product["product_id"], {"stock_quantity": new_qty})
                 if ok:
                     st.success(
                         f"✅ Stock updated! {selected_product['product_name']}: "
@@ -1892,13 +1824,15 @@ def page_expenses():
                 st.error("Please fill in description and a valid amount.")
             else:
                 expense_id = gen_id("EXP")
-                row = [
-                    expense_id, business_id,
-                    exp_name.strip(), category,
-                    amount, str(expense_date),
-                    user.get("full_name", user.get("email", ""))
-                ]
-                ok = append_row(SHEET_EXPENSES, row)
+                ok = db_insert(TBL_EXPENSES, {
+                    "expense_id":   expense_id,
+                    "business_id":  business_id,
+                    "description":  exp_name.strip(),
+                    "category":     category,
+                    "amount":       amount,
+                    "expense_date": str(expense_date),
+                    "recorded_by":  user.get("full_name", user.get("email", "")),
+                })
                 if ok:
                     st.success(f"✅ Expense logged: {exp_name} — {fmt_naira(amount)}")
                     st.rerun()
@@ -2141,7 +2075,7 @@ def page_insights():
 def page_admin():
     page_header("🛡️ Admin Panel", "BizPulse platform management")
 
-    users_df = read_sheet(SHEET_USERS)
+    users_df = db_fetch(TBL_USERS)
 
     if users_df.empty:
         st.info("No users found.")
@@ -2231,14 +2165,11 @@ def page_admin():
                         days   = 30 if plan == "monthly" else 365
                         end_dt = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
                         if st.button(f"✅ Activate", key=f"act_{u['user_id']}"):
-                            ok = update_row_by_id(
-                                SHEET_USERS, "user_id", u["user_id"],
-                                {
+                            ok = db_update(TBL_USERS, "user_id", u["user_id"], {
                                     "plan_status":       "active",
                                     "subscription_start": datetime.now().strftime("%Y-%m-%d"),
                                     "subscription_end":   end_dt,
-                                }
-                            )
+                                })
                             if ok:
                                 pay_amount = (PAYMENT_DETAILS["yearly_price"]
                                               if plan == "yearly"
@@ -2252,7 +2183,7 @@ def page_admin():
                                 st.rerun()
                     with col3:
                         if st.button("🗑️ Delete", key=f"del_u_{u['user_id']}"):
-                            delete_row_by_id(SHEET_USERS, "user_id", u["user_id"])
+                            db_delete(TBL_USERS, "user_id", u["user_id"])
                             st.rerun()
                     st.markdown("---")
 
@@ -2274,8 +2205,7 @@ def page_admin():
                         curr_end = parse_date(u.get("subscription_end", ""))
                         base     = curr_end if (curr_end and curr_end > datetime.now()) else datetime.now()
                         new_end  = (base + timedelta(days=ext_days)).strftime("%Y-%m-%d")
-                        update_row_by_id(SHEET_USERS, "user_id", u["user_id"],
-                                         {"subscription_end": new_end})
+                        db_update(TBL_USERS, "user_id", u["user_id"], {"subscription_end": new_end})
                         pay_amount = (PAYMENT_DETAILS["yearly_price"]
                                       if ext_days == 365
                                       else PAYMENT_DETAILS["monthly_price"])
@@ -2288,8 +2218,7 @@ def page_admin():
                         st.rerun()
                 with col3:
                     if st.button("⛔ Deactivate", key=f"deact_{u['user_id']}"):
-                        update_row_by_id(SHEET_USERS, "user_id", u["user_id"],
-                                         {"plan_status": "expired"})
+                        db_update(TBL_USERS, "user_id", u["user_id"], {"plan_status": "expired"})
                         st.rerun()
                 st.markdown("---")
 
@@ -2582,10 +2511,7 @@ def page_admin():
                                              key=f"churn_ext_{u['user_id']}"):
                                     base    = u["sub_end_dt"] if u["sub_end_dt"] > pd.Timestamp(now) else pd.Timestamp(now)
                                     new_end = (base + timedelta(days=ext_days)).strftime("%Y-%m-%d")
-                                    update_row_by_id(
-                                        SHEET_USERS, "user_id", u["user_id"],
-                                        {"subscription_end": new_end}
-                                    )
+                                    db_update(TBL_USERS, "user_id", u["user_id"], {"subscription_end": new_end})
                                     pay_amount = (PAYMENT_DETAILS["yearly_price"]
                                                   if ext_days == 365
                                                   else PAYMENT_DETAILS["monthly_price"])
@@ -2659,14 +2585,11 @@ def page_admin():
                                     if st.button(f"🔁 Reactivate ({ext_label})",
                                                  key=f"react_{u['user_id']}"):
                                         new_end = (datetime.now() + timedelta(days=ext_days)).strftime("%Y-%m-%d")
-                                        update_row_by_id(
-                                            SHEET_USERS, "user_id", u["user_id"],
-                                            {
+                                        db_update(TBL_USERS, "user_id", u["user_id"], {
                                                 "plan_status":      "active",
                                                 "subscription_start": datetime.now().strftime("%Y-%m-%d"),
                                                 "subscription_end": new_end,
-                                            }
-                                        )
+                                            })
                                         pay_amount = (PAYMENT_DETAILS["yearly_price"]
                                                       if ext_days == 365
                                                       else PAYMENT_DETAILS["monthly_price"])
@@ -2712,15 +2635,12 @@ def page_admin():
                                 hashed   = bcrypt.hashpw(
                                     temp_pw.encode(), bcrypt.gensalt()
                                 ).decode()
-                                ok = update_row_by_id(
-                                    SHEET_USERS, "user_id", u["user_id"],
-                                    {
+                                ok = db_update(TBL_USERS, "user_id", u["user_id"], {
                                         "password_hash":            hashed,
                                         "password_reset_requested": "no",
                                         "reset_requested_at":       "",
                                         "must_change_password":     "yes",
-                                    }
-                                )
+                                    })
                                 st.cache_data.clear()
                                 if ok:
                                     # Store in session_state so it survives the rerun
@@ -2740,11 +2660,8 @@ def page_admin():
 
                         with col3:
                             if st.button("✖ Dismiss", key=f"dismis_{u['user_id']}"):
-                                update_row_by_id(
-                                    SHEET_USERS, "user_id", u["user_id"],
-                                    {"password_reset_requested": "no",
-                                     "reset_requested_at": ""}
-                                )
+                                db_update(TBL_USERS, "user_id", u["user_id"], {"password_reset_requested": "no",
+                                     "reset_requested_at": ""})
                                 st.cache_data.clear()
                                 st.rerun()
                     st.markdown("---")
@@ -2920,7 +2837,7 @@ def check_access():
 
     if not is_subscription_active(user):
         # Auto-mark as expired
-        update_row_by_id(SHEET_USERS, "user_id", user["user_id"], {"plan_status": "expired"})
+        db_update(TBL_USERS, "user_id", user["user_id"], {"plan_status": "expired"})
         st.session_state.user["plan_status"] = "expired"
         st.rerun()
 
