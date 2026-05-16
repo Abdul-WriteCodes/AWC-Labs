@@ -87,11 +87,56 @@ def inject_styles():
         background-color: var(--deep) !important;
         color: var(--text-primary);
     }
-    #MainMenu, footer, { visibility: hidden; }
+    #MainMenu, footer { visibility: hidden; }
+    /* Keep header visible so sidebar toggle arrow works */
+    header { visibility: visible; background: transparent !important; }
+    header [data-testid="stToolbar"] { visibility: hidden; }
+    /* Sidebar toggle button always visible */
+    [data-testid="collapsedControl"] {
+        display: flex !important;
+        visibility: visible !important;
+        background: #111827 !important;
+        border: 1px solid #1F2D3D !important;
+        border-radius: 0 10px 10px 0 !important;
+        color: #F5A623 !important;
+        top: 50% !important;
+        z-index: 999 !important;
+    }
+    [data-testid="collapsedControl"]:hover {
+        background: #1A2332 !important;
+        border-color: #F5A623 !important;
+    }
     .block-container {
         padding-top: 1.5rem !important;
         padding-bottom: 3rem !important;
         max-width: 1280px;
+    }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            padding-top: 0.75rem !important;
+        }
+        .kpi-card { padding: 1rem 1.1rem; margin-bottom: 0.6rem; }
+        .kpi-value { font-size: 1.4rem; }
+        .pricing-grid { flex-direction: column; align-items: center; }
+        .pricing-card { max-width: 100%; min-width: unset; width: 100%; }
+        .pricing-card.featured { transform: translateY(0); }
+        [data-testid="stSidebar"] { width: 240px !important; }
+        .login-value-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.6rem !important;
+        }
+        .login-feature-strip {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+        }
+    }
+    @media (max-width: 480px) {
+        .kpi-value { font-size: 1.2rem; }
+        .login-value-grid { grid-template-columns: 1fr 1fr !important; }
     }
 
     /* ── Streamlit input overrides ── */
@@ -1039,55 +1084,170 @@ def stock_pill(qty, reorder):
 def page_login():
     inject_styles()
 
-    # ── Full-screen dark hero login ──
+    # ── Responsive login layout ──
     st.markdown("""
-    <div style="
-        min-height:100vh;
-        display:flex; flex-direction:column;
-        align-items:center; justify-content:center;
-        padding: 2rem 1rem;
-    ">
-        <!-- Logo -->
-        <div style="text-align:center; margin-bottom:2.5rem;">
-            <div style="
-                display:inline-flex; align-items:center; gap:0.6rem;
-                margin-bottom:0.5rem;
-            ">
+    <style>
+    /* Login page full dark background */
+    .stApp { background: #080B0F !important; }
+
+    /* Value prop grid */
+    .login-value-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 0.75rem;
+        margin: 1.25rem 0;
+    }
+    .login-stat-card {
+        background: #0D1117;
+        border: 1px solid #1F2D3D;
+        border-radius: 12px;
+        padding: 0.875rem 0.75rem;
+        text-align: center;
+    }
+    .login-stat-value {
+        font-family: 'DM Mono', monospace;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #F5A623;
+        line-height: 1;
+        margin-bottom: 0.2rem;
+    }
+    .login-stat-label {
+        font-size: 0.68rem;
+        color: #4A6080;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        line-height: 1.3;
+    }
+
+    /* Feature strip */
+    .login-feature-strip {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+    }
+    .login-feature-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #0D1117;
+        border: 1px solid #1F2D3D;
+        border-radius: 99px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+        color: #8BA0B8;
+    }
+    .login-feature-pill span { color: #F5A623; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── Two-column layout on desktop, stacked on mobile ──
+    left, right = st.columns([1.1, 1])
+
+    with left:
+        # Logo
+        st.markdown("""
+        <div style="padding:1.5rem 0 1rem 0;">
+            <div style="display:flex;align-items:center;gap:0.65rem;margin-bottom:1.5rem;">
                 <div style="
-                    width:38px; height:38px; border-radius:10px;
+                    width:42px;height:42px;border-radius:12px;
                     background:linear-gradient(135deg,#F5A623,#C4831A);
-                    display:flex; align-items:center; justify-content:center;
-                    font-size:1.1rem; box-shadow:0 4px 16px rgba(245,166,35,0.35);
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:1.2rem;
+                    box-shadow:0 4px 18px rgba(245,166,35,0.4);
+                    flex-shrink:0;
                 ">📊</div>
                 <div style="
                     font-family:'Syne',sans-serif;
-                    font-size:1.7rem; font-weight:800;
-                    color:#F0F4F8; letter-spacing:-0.04em;
+                    font-size:1.8rem;font-weight:800;
+                    color:#F0F4F8;letter-spacing:-0.05em;
                 ">BizPulse</div>
             </div>
-            <div style="
-                font-size:0.85rem; color:#4A6080;
-                letter-spacing:0.04em; text-transform:uppercase;
-                font-family:'DM Sans',sans-serif;
-            ">Business Intelligence for Nigerian SMEs</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
-    _, col, _ = st.columns([1, 2, 1])
-    with col:
+            <!-- Headline -->
+            <div style="
+                font-family:'Syne',sans-serif;
+                font-size:clamp(1.6rem,4vw,2.4rem);
+                font-weight:800;color:#F0F4F8;
+                letter-spacing:-0.04em;line-height:1.1;
+                margin-bottom:0.75rem;
+            ">
+                Your business,<br>
+                <span style="color:#F5A623;">finally in focus.</span>
+            </div>
+            <div style="
+                font-size:0.92rem;color:#4A6080;
+                line-height:1.65;margin-bottom:1.25rem;
+                max-width:400px;
+            ">
+                Nigerian SMEs using BizPulse know their exact profit,
+                catch low stock before it hurts sales, and make
+                better decisions — every single day.
+            </div>
+
+            <!-- Stats grid -->
+            <div class="login-value-grid">
+                <div class="login-stat-card">
+                    <div class="login-stat-value">₦0</div>
+                    <div class="login-stat-label">To start<br>14 days free</div>
+                </div>
+                <div class="login-stat-card">
+                    <div class="login-stat-value">60s</div>
+                    <div class="login-stat-label">To record<br>a sale</div>
+                </div>
+                <div class="login-stat-card">
+                    <div class="login-stat-value">100%</div>
+                    <div class="login-stat-label">Your data<br>yours only</div>
+                </div>
+                <div class="login-stat-card">
+                    <div class="login-stat-value">24/7</div>
+                    <div class="login-stat-label">Access from<br>any device</div>
+                </div>
+            </div>
+
+            <!-- Feature pills -->
+            <div class="login-feature-strip">
+                <div class="login-feature-pill"><span>●</span> Sales tracking</div>
+                <div class="login-feature-pill"><span>●</span> Inventory alerts</div>
+                <div class="login-feature-pill"><span>●</span> Profit analytics</div>
+                <div class="login-feature-pill"><span>●</span> Expense control</div>
+            </div>
+
+            <!-- Testimonial -->
+            <div style="
+                background:#0D1117;border:1px solid #1F2D3D;
+                border-left:3px solid #F5A623;
+                border-radius:0 12px 12px 0;
+                padding:0.875rem 1rem;margin-top:0.75rem;
+            ">
+                <div style="font-size:0.82rem;color:#8BA0B8;line-height:1.55;
+                            font-style:italic;margin-bottom:0.4rem;">
+                    "I used to guess my profit every month.
+                    Now I know exactly where every naira goes."
+                </div>
+                <div style="font-size:0.72rem;color:#4A6080;">
+                    — Small business owner, Lagos
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with right:
         st.markdown("""
         <div style="
-            background:#111827; border:1px solid #1F2D3D;
-            border-radius:20px; padding:2.5rem 2rem;
-            box-shadow:0 40px 100px rgba(0,0,0,0.6);
+            background:#111827;border:1px solid #2D3F55;
+            border-radius:20px;padding:2rem 1.75rem;
+            box-shadow:0 32px 80px rgba(0,0,0,0.7);
+            margin-top:1.5rem;
         ">
-            <div style="margin-bottom:1.75rem;">
+            <div style="margin-bottom:1.5rem;">
                 <div style="
                     font-family:'Syne',sans-serif;
-                    font-size:1.4rem; font-weight:700;
-                    color:#F0F4F8; letter-spacing:-0.03em;
-                    margin-bottom:0.3rem;
+                    font-size:1.35rem;font-weight:700;
+                    color:#F0F4F8;letter-spacing:-0.03em;
+                    margin-bottom:0.25rem;
                 ">Welcome back</div>
                 <div style="font-size:0.82rem;color:#4A6080;">
                     Sign in to your business dashboard
@@ -1122,7 +1282,8 @@ def page_login():
 
         col_a, col_b = st.columns(2)
         with col_a:
-            if st.button("Forgot password?", key="goto_forgot"):
+            if st.button("Forgot password?", key="goto_forgot",
+                         use_container_width=True):
                 st.session_state.current_page = "forgot_password"
                 st.rerun()
         with col_b:
@@ -1132,10 +1293,12 @@ def page_login():
                 st.rerun()
 
         st.markdown("""
-        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #1F2D3D;
-                    text-align:center;">
-            <div style="font-size:0.75rem;color:#4A6080;">
-                🔒 Your data is encrypted and stored securely
+        <div style="
+            margin-top:1.25rem;padding-top:1.25rem;
+            border-top:1px solid #1F2D3D;text-align:center;
+        ">
+            <div style="font-size:0.72rem;color:#4A6080;">
+                🔒 256-bit encrypted · Your data is never shared
             </div>
         </div>
         """, unsafe_allow_html=True)
