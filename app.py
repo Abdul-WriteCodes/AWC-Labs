@@ -357,8 +357,12 @@ def get_payments_df() -> pd.DataFrame:
         df = db_fetch(TBL_PAYMENTS)
         if df.empty:
             return pd.DataFrame()
-        df["amount"]       = pd.to_numeric(df["amount"],       errors="coerce").fillna(0)
-        df["payment_date"] = pd.to_datetime(df["payment_date"], errors="coerce")
+        df["amount"]       = pd.to_numeric(df["amount"], errors="coerce").fillna(0)
+        # Supabase returns timezone-aware timestamps — parse as UTC then strip tz
+        # so all comparisons stay naive-datetime consistent with the rest of the app
+        df["payment_date"] = pd.to_datetime(
+            df["payment_date"], errors="coerce", utc=True
+        ).dt.tz_localize(None)
         return df
     except Exception:
         return pd.DataFrame()
@@ -522,29 +526,20 @@ def signup_user(business_name, full_name, email, password, plan_type):
 # ─────────────────────────────────────────────
 
 def get_sales_df(business_id: str) -> pd.DataFrame:
-    """Return sales DataFrame filtered to this business, with typed columns."""
-    df = db_fetch(TBL_SALES)
+    """Return sales DataFrame for this business with typed columns."""
+    df = db_fetch(TBL_SALES, {"business_id": business_id})
     if df.empty:
         return pd.DataFrame()
-
-    # Normalise header: sheet may use "sales_id" or "sale_id" — rename to "sale_id"
-    if "sales_id" in df.columns and "sale_id" not in df.columns:
-        df = df.rename(columns={"sales_id": "sale_id"})
-
-    # business_id column is required — bail clearly if missing
-    if "business_id" not in df.columns:
-        return pd.DataFrame()
-
-    df = df[df["business_id"].astype(str) == str(business_id)].copy()
-    if df.empty:
-        return df
-
-    df["sale_date"]    = pd.to_datetime(df["sale_date"],    errors="coerce")
+    # Supabase returns tz-aware timestamps — strip tz for naive datetime comparisons
+    df["sale_date"]    = pd.to_datetime(
+        df["sale_date"], errors="coerce", utc=True
+    ).dt.tz_localize(None)
     df["total_amount"] = pd.to_numeric(df["total_amount"],  errors="coerce").fillna(0)
     df["gross_profit"] = pd.to_numeric(df["gross_profit"],  errors="coerce").fillna(0)
     df["quantity"]     = pd.to_numeric(df["quantity"],      errors="coerce").fillna(0)
     df["cost_total"]   = pd.to_numeric(df["cost_total"],    errors="coerce").fillna(0)
     return df
+
 
 
 def get_products_df(business_id: str) -> pd.DataFrame:
@@ -562,8 +557,10 @@ def get_expenses_df(business_id: str) -> pd.DataFrame:
     df = db_fetch(TBL_EXPENSES, {"business_id": business_id})
     if df.empty:
         return pd.DataFrame()
-    df["amount"]       = pd.to_numeric(df["amount"],       errors="coerce").fillna(0)
-    df["expense_date"] = pd.to_datetime(df["expense_date"], errors="coerce")
+    df["amount"]       = pd.to_numeric(df["amount"], errors="coerce").fillna(0)
+    df["expense_date"] = pd.to_datetime(
+        df["expense_date"], errors="coerce", utc=True
+    ).dt.tz_localize(None)
     return df
 
 
@@ -2327,8 +2324,8 @@ def page_admin():
         else:
             # Parse activation dates
             paid_df["activation_date"] = pd.to_datetime(
-                paid_df["subscription_start"], errors="coerce"
-            )
+                paid_df["subscription_start"], errors="coerce", utc=True
+            ).dt.tz_localize(None)
             paid_df = paid_df.dropna(subset=["activation_date"])
 
             if paid_df.empty:
@@ -2349,7 +2346,7 @@ def page_admin():
                     active_mask = paid_df["activation_date"] <= period_end
                     # Check subscription_end if available
                     if "subscription_end" in paid_df.columns:
-                        sub_end = pd.to_datetime(paid_df["subscription_end"], errors="coerce")
+                        sub_end = pd.to_datetime(paid_df["subscription_end"], errors="coerce", utc=True).dt.tz_localize(None)
                         active_mask = active_mask & (
                             sub_end.isna() | (sub_end >= month_start)
                         )
@@ -2454,8 +2451,8 @@ def page_admin():
                 st.info("No active users yet.")
             else:
                 active_u["sub_end_dt"] = pd.to_datetime(
-                    active_u["subscription_end"], errors="coerce"
-                )
+                    active_u["subscription_end"], errors="coerce", utc=True
+                ).dt.tz_localize(None)
                 expiring = active_u[
                     (active_u["sub_end_dt"] >= pd.Timestamp(now)) &
                     (active_u["sub_end_dt"] <= pd.Timestamp(soon))
@@ -2559,8 +2556,8 @@ def page_admin():
                     st.success("✅ No expired users.")
                 else:
                     already_expired["sub_end_dt"] = pd.to_datetime(
-                        already_expired["subscription_end"], errors="coerce"
-                    )
+                        already_expired["subscription_end"], errors="coerce", utc=True
+                    ).dt.tz_localize(None)
                     recent_expired = already_expired[
                         already_expired["sub_end_dt"] >= pd.Timestamp(now - timedelta(days=30))
                     ].sort_values("sub_end_dt", ascending=False)
