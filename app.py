@@ -2670,13 +2670,14 @@ def page_admin():
         st.info("💡 No payment records yet. Revenue will appear here as you activate users.")
 
     st.markdown("---")
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "⏳ Pending Activation",
         "✅ Active Users",
         "📈 MRR & Growth",
         "🚨 Churn Alerts",
         "🔑 Password Resets",
         "👥 All Users",
+        "⛔ Deactivated",
     ])
 
     # ── Pending ──
@@ -3205,6 +3206,55 @@ def page_admin():
         csv = display.to_csv(index=False).encode("utf-8")
         st.download_button("⬇️ Export All Users CSV", data=csv,
                            file_name="bizpulse_users.csv", mime="text/csv")
+
+    # ── Deactivated ──
+    with tab7:
+        deactivated_df = users_df[users_df["plan_status"] == "expired"]
+        if deactivated_df.empty:
+            st.success("✅ No deactivated accounts.")
+        else:
+            st.info(f"{len(deactivated_df)} deactivated account(s). Choose a plan and reactivate.")
+            for _, u in deactivated_df.iterrows():
+                with st.container():
+                    col1, col2, col3 = st.columns([3, 2, 2])
+                    with col1:
+                        st.markdown(f"**{u['business_name']}** — {u['full_name']}")
+                        st.caption(
+                            f"📧 {u['email']} | "
+                            f"Was: {u.get('plan_type','?')} | "
+                            f"Expired: {u.get('subscription_end','?')}"
+                        )
+                    with col2:
+                        plan_choice = st.selectbox(
+                            "Plan",
+                            options=["monthly", "yearly"],
+                            format_func=lambda x: "Monthly (30d)" if x == "monthly" else "Yearly (365d)",
+                            key=f"react_plan_{u['user_id']}",
+                        )
+                    with col3:
+                        if st.button("✅ Reactivate", key=f"reactivate_{u['user_id']}"):
+                            days    = 365 if plan_choice == "yearly" else 30
+                            new_end = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
+                            ok = db_update(TBL_USERS, "user_id", u["user_id"], {
+                                "plan_status":        "active",
+                                "plan_type":          plan_choice,
+                                "subscription_start": datetime.now().strftime("%Y-%m-%d"),
+                                "subscription_end":   new_end,
+                            })
+                            if ok:
+                                pay_amount = (
+                                    PAYMENT_DETAILS["yearly_price"]
+                                    if plan_choice == "yearly"
+                                    else PAYMENT_DETAILS["monthly_price"]
+                                )
+                                log_payment(
+                                    u["user_id"], u["business_name"], u["email"],
+                                    plan_choice, pay_amount, "Reactivation"
+                                )
+                                st.cache_data.clear()
+                                st.success(f"✅ {u['business_name']} reactivated until {new_end}")
+                                st.rerun()
+                    st.markdown("---")
 
 
 # ─────────────────────────────────────────────
