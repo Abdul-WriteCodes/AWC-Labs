@@ -1942,18 +1942,33 @@ def page_record_sale():
             else:
                 prod_names = in_stock["product_name"].tolist()
                 sel_name   = st.selectbox("Product", prod_names, key="cart_prod")
-                ac1, ac2, ac3 = st.columns(3)
-                sel_qty  = ac1.number_input("Quantity", min_value=1, value=1, step=1)
-                sel_disc = ac2.number_input("Discount %", min_value=0.0, max_value=100.0,
-                                             value=0.0, step=0.5,
-                                             help="Enter % discount for this item")
-                add_btn  = st.form_submit_button("➕ Add to Cart", type="primary",
-                                                  use_container_width=True)
+
+                # Show original price as reference
+                sel_prod_row   = in_stock[in_stock["product_name"] == sel_name].iloc[0]
+                original_price = safe_float(sel_prod_row["selling_price"])
+                st.caption(f"📦 Listed price: {fmt_naira(original_price)}")
+
+                ac1, ac2 = st.columns(2)
+                sel_qty        = ac1.number_input("Quantity", min_value=1, value=1, step=1)
+                sel_sell_price = ac2.number_input(
+                    "Selling Price (₦)",
+                    min_value=0.0,
+                    value=float(original_price),
+                    step=100.0,
+                    help="Leave as-is for full price. Enter lower amount if negotiated."
+                )
+
+                # Warn if entered price is higher than listed
+                if sel_sell_price > original_price:
+                    st.warning(f"⚠️ Entered price is higher than listed price {fmt_naira(original_price)}. Please confirm.")
+
+                add_btn = st.form_submit_button("➕ Add to Cart", type="primary",
+                                                 use_container_width=True)
 
             if add_btn and not in_stock.empty:
                 prod_row   = in_stock[in_stock["product_name"] == sel_name].iloc[0]
                 avail_qty  = int(prod_row["stock_quantity"])
-                unit_price = safe_float(prod_row["selling_price"])
+                unit_price = safe_float(prod_row["selling_price"])  # original listed price
                 cost_price = safe_float(prod_row["cost_price"])
 
                 # Check if product already in cart
@@ -1964,20 +1979,23 @@ def page_record_sale():
                 if existing_qty + sel_qty > avail_qty:
                     st.error(f"Only {avail_qty - existing_qty} units available for {sel_name}.")
                 else:
-                    disc_amt   = round(unit_price * sel_qty * (sel_disc / 100), 2)
-                    line_total = round(unit_price * sel_qty - disc_amt, 2)
-                    cost_total = round(cost_price * sel_qty, 2)
+                    negotiated_price = float(sel_sell_price)
+                    disc_amt         = round((unit_price - negotiated_price) * sel_qty, 2)
+                    disc_amt         = max(0, disc_amt)  # no negative discount
+                    line_total       = round(negotiated_price * sel_qty, 2)
+                    cost_total       = round(cost_price * sel_qty, 2)
                     st.session_state.cart.append({
-                        "product_id":   prod_row["product_id"],
-                        "product_name": sel_name,
-                        "quantity":     int(sel_qty),
-                        "unit_price":   unit_price,
-                        "cost_price":   cost_price,
-                        "discount_pct": float(sel_disc),
-                        "discount_amt": disc_amt,
-                        "line_total":   line_total,
-                        "cost_total":   cost_total,
-                        "gross_profit": round(line_total - cost_total, 2),
+                        "product_id":      prod_row["product_id"],
+                        "product_name":    sel_name,
+                        "quantity":        int(sel_qty),
+                        "unit_price":      unit_price,        # original listed price
+                        "negotiated_price": negotiated_price, # actual sold price
+                        "cost_price":      cost_price,
+                        "discount_pct":    0.0,               # not used anymore
+                        "discount_amt":    disc_amt,
+                        "line_total":      line_total,
+                        "cost_total":      cost_total,
+                        "gross_profit":    round(line_total - cost_total, 2),
                     })
                     st.session_state.sale_done = None
                     st.rerun()
@@ -1997,12 +2015,18 @@ def page_record_sale():
             for idx, item in enumerate(st.session_state.cart):
                 ic1, ic2 = st.columns([4, 1])
                 with ic1:
-                    disc_str = (f" — {item['discount_pct']}% off "
-                                f"(-{fmt_naira(item['discount_amt'])})"
-                                if item["discount_pct"] > 0 else "")
+                    negotiated = item.get("negotiated_price", item["unit_price"])
+                    if negotiated < item["unit_price"]:
+                        price_str = (
+                            f"~~{fmt_naira(item['unit_price'])}~~ → "
+                            f"**{fmt_naira(negotiated)}**"
+                            f" (-{fmt_naira(item['discount_amt'])})"
+                        )
+                    else:
+                        price_str = fmt_naira(item["unit_price"])
                     item_desc = (
                         f"**{item['product_name']}** × {item['quantity']} "
-                        f"@ {fmt_naira(item['unit_price'])}{disc_str}  \n"
+                        f"@ {price_str}  \n"
                         f"**Line total: {fmt_naira(item['line_total'])}**"
                     )
                     st.markdown(item_desc)
@@ -2156,20 +2180,15 @@ def page_record_sale():
                 receipt_lines.append(f"  Customer: {rd['customer_name']}")
             receipt_lines.append(f"{'='*38}")
             for item in rd["items"]:
+                negotiated = item.get("negotiated_price", item["unit_price"])
                 receipt_lines.append(
                     f"  {item['product_name'][:20]:<20}"
                 )
-                disc_str = (f"  Discount: -{fmt_naira(item['discount_amt'])}"
-                            if item["discount_pct"] > 0 else "")
                 receipt_lines.append(
-                    f"  {item['quantity']} x {fmt_naira(item['unit_price'])}"
+                    f"  {item['quantity']} x {fmt_naira(negotiated)}"
                     f" = {fmt_naira(item['line_total'])}"
                 )
-                if disc_str:
-                    receipt_lines.append(disc_str)
             receipt_lines.append(f"{'-'*38}")
-            if rd["discount"] > 0:
-                receipt_lines.append(f"  Total Discount: -{fmt_naira(rd['discount'])}")
             receipt_lines.append(f"  TOTAL:  {fmt_naira(rd['grand_total'])}")
             receipt_lines.append(f"  Payment: {rd['payment']}")
             if rd["note"]:
@@ -2224,21 +2243,16 @@ def page_record_sale():
                 story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
                 story.append(Spacer(1, 3*mm))
 
-                # Items table
+                # Items table — show only what customer paid
                 tdata = [["Item", "Qty", "Price", "Total"]]
                 for item in rd["items"]:
+                    negotiated = item.get("negotiated_price", item["unit_price"])
                     tdata.append([
                         item["product_name"][:18],
                         str(item["quantity"]),
-                        f"\u20a6{item['unit_price']:,.0f}",
+                        f"\u20a6{negotiated:,.0f}",
                         f"\u20a6{item['line_total']:,.0f}",
                     ])
-                    if item["discount_pct"] > 0:
-                        tdata.append([
-                            f"  Discount ({item['discount_pct']}%)",
-                            "", "",
-                            f"-\u20a6{item['discount_amt']:,.0f}",
-                        ])
 
                 col_w = [45*mm, 10*mm, 22*mm, 22*mm]
                 t = Table(tdata, colWidths=col_w)
@@ -2255,9 +2269,6 @@ def page_record_sale():
                 story.append(Spacer(1, 3*mm))
                 story.append(HRFlowable(width="100%", thickness=0.5, color=colors.grey))
 
-                if rd["discount"] > 0:
-                    story.append(Paragraph(
-                        f"Total Discount: -\u20a6{rd['discount']:,.0f}", normal_l))
                 story.append(Paragraph(
                     f"<b>TOTAL: \u20a6{rd['grand_total']:,.0f}</b>", bold_center))
                 story.append(Paragraph(f"Payment: {rd['payment']}", normal_c))
