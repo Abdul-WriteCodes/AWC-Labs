@@ -548,6 +548,77 @@ def inject_styles():
         background: var(--gold-glow) !important;
     }
 
+    /* ── Login landing page ── */
+    .lp-hero { text-align:center; padding:2.5rem 1rem 1.5rem 1rem; }
+    .lp-logo-wrap {
+        display:inline-flex; align-items:center; gap:0.75rem;
+        margin-bottom:1.25rem;
+    }
+    .lp-logo-icon {
+        width:52px; height:52px; border-radius:14px;
+        background:linear-gradient(135deg,#F5A623,#C4831A);
+        display:flex; align-items:center; justify-content:center;
+        font-size:1.6rem; box-shadow:0 8px 28px rgba(245,166,35,0.45);
+    }
+    .lp-logo-text {
+        font-family:'Syne',sans-serif;
+        font-size:2.2rem; font-weight:800;
+        color:#F0F4F8; letter-spacing:-0.05em;
+    }
+    .lp-badge {
+        display:inline-flex; align-items:center; gap:0.45rem;
+        background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3);
+        border-radius:99px; padding:0.35rem 1rem;
+        font-size:0.75rem; color:#F5A623; font-weight:600;
+        letter-spacing:0.04em; margin-bottom:1.25rem;
+    }
+    .lp-headline {
+        font-family:'Syne',sans-serif;
+        font-size:clamp(1.7rem,5vw,2.6rem);
+        font-weight:800; color:#F0F4F8;
+        letter-spacing:-0.04em; line-height:1.15; margin-bottom:0.75rem;
+    }
+    .lp-headline span { color:#F5A623; }
+    .lp-sub {
+        font-size:1rem; color:#8BA0B8;
+        max-width:520px; margin:0 auto 1.75rem auto; line-height:1.65;
+    }
+    .lp-value-grid {
+        display:grid; grid-template-columns:repeat(4,1fr);
+        gap:0.75rem; max-width:720px; margin:0 auto 2rem auto;
+    }
+    .lp-value-card {
+        background:#111827; border:1px solid #1F2D3D;
+        border-radius:14px; padding:1.1rem 1rem;
+        text-align:center; transition:border-color 0.2s;
+    }
+    .lp-value-card:hover { border-color:#F5A623; }
+    .lp-value-icon { font-size:1.5rem; margin-bottom:0.4rem; }
+    .lp-value-title {
+        font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700;
+        color:#F0F4F8; margin-bottom:0.2rem;
+    }
+    .lp-value-desc { font-size:0.72rem; color:#4A6080; line-height:1.4; }
+    .lp-divider {
+        display:flex; align-items:center; gap:1rem;
+        max-width:480px; margin:0 auto 1.5rem auto;
+    }
+    .lp-divider::before, .lp-divider::after {
+        content:''; flex:1; border-top:1px solid #1F2D3D;
+    }
+    .lp-divider span { font-size:0.75rem; color:#4A6080; white-space:nowrap; }
+    .lp-trust-strip {
+        display:flex; justify-content:center; align-items:center;
+        gap:1.5rem; flex-wrap:wrap; padding:1rem 0;
+        border-top:1px solid #1F2D3D; margin-top:1rem;
+    }
+    .lp-trust-item { display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:#4A6080; }
+    .lp-trust-item span { color:#00C896; }
+    @media (max-width:600px) {
+        .lp-value-grid { grid-template-columns:1fr 1fr !important; }
+        .lp-trust-strip { gap:0.75rem; }
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
@@ -1164,117 +1235,19 @@ def page_login():
 
     # ── Premium landing hero above the fold ──
     st.markdown("""
-    <style>
-    /* Login page extra styles */
-    .lp-hero {
-        text-align: center;
-        padding: 2.5rem 1rem 1.5rem 1rem;
-    }
-    .lp-logo-wrap {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
-    }
-    .lp-logo-icon {
-        width: 52px; height: 52px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #F5A623, #C4831A);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.6rem;
-        box-shadow: 0 8px 28px rgba(245,166,35,0.45);
-    }
-    .lp-logo-text {
-        font-family: 'Syne', sans-serif;
-        font-size: 2.2rem; font-weight: 800;
-        color: #F0F4F8; letter-spacing: -0.05em;
-    }
-    .lp-badge {
-        display: inline-flex; align-items: center; gap: 0.45rem;
-        background: rgba(245,166,35,0.1);
-        border: 1px solid rgba(245,166,35,0.3);
-        border-radius: 99px;
-        padding: 0.35rem 1rem;
-        font-size: 0.75rem; color: #F5A623; font-weight: 600;
-        letter-spacing: 0.04em;
-        margin-bottom: 1.25rem;
-    }
-    .lp-headline {
-        font-family: 'Syne', sans-serif;
-        font-size: clamp(1.7rem, 5vw, 2.6rem);
-        font-weight: 800; color: #F0F4F8;
-        letter-spacing: -0.04em; line-height: 1.15;
-        margin-bottom: 0.75rem;
-    }
-    .lp-headline span { color: #F5A623; }
-    .lp-sub {
-        font-size: 1rem; color: #8BA0B8;
-        max-width: 520px; margin: 0 auto 1.75rem auto;
-        line-height: 1.65;
-    }
-    .lp-value-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.75rem;
-        max-width: 720px;
-        margin: 0 auto 2rem auto;
-    }
-    .lp-value-card {
-        background: #111827;
-        border: 1px solid #1F2D3D;
-        border-radius: 14px;
-        padding: 1.1rem 1rem;
-        text-align: center;
-        transition: border-color 0.2s;
-    }
-    .lp-value-card:hover { border-color: #F5A623; }
-    .lp-value-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
-    .lp-value-title {
-        font-family: 'Syne', sans-serif;
-        font-size: 0.8rem; font-weight: 700;
-        color: #F0F4F8; margin-bottom: 0.2rem;
-    }
-    .lp-value-desc { font-size: 0.72rem; color: #4A6080; line-height: 1.4; }
-    .lp-divider {
-        display: flex; align-items: center; gap: 1rem;
-        max-width: 480px; margin: 0 auto 1.5rem auto;
-    }
-    .lp-divider::before, .lp-divider::after {
-        content: ''; flex: 1;
-        border-top: 1px solid #1F2D3D;
-    }
-    .lp-divider span { font-size: 0.75rem; color: #4A6080; white-space: nowrap; }
-    .lp-trust-strip {
-        display: flex; justify-content: center; align-items: center;
-        gap: 1.5rem; flex-wrap: wrap;
-        padding: 1rem 0;
-        border-top: 1px solid #1F2D3D;
-        margin-top: 1rem;
-    }
-    .lp-trust-item {
-        display: flex; align-items: center; gap: 0.4rem;
-        font-size: 0.75rem; color: #4A6080;
-    }
-    .lp-trust-item span { color: #00C896; }
-    @media (max-width: 600px) {
-        .lp-value-grid { grid-template-columns: 1fr 1fr !important; }
-        .lp-trust-strip { gap: 0.75rem; }
-    }
-    </style>
-
     <div class="lp-hero">
         <div class="lp-logo-wrap">
             <div class="lp-logo-icon">📊</div>
             <div class="lp-logo-text">BizPulse</div>
         </div>
         <div class="lp-badge">
-            <span>●</span> Built for Nigerian SMEs · Powered by real-time data
+            <span>&#9679;</span> Built for Nigerian SMEs &middot; Powered by real-time data
         </div>
         <div class="lp-headline">
             Run your business<br>like you <span>know your numbers.</span>
         </div>
         <div class="lp-sub">
-            Sales tracking, inventory control, expense management and profit analytics —
+            Sales tracking, inventory control, expense management and profit analytics &#8212;
             all in one dashboard designed for the way Nigerian businesses actually work.
         </div>
 
@@ -1282,7 +1255,7 @@ def page_login():
             <div class="lp-value-card">
                 <div class="lp-value-icon">🛒</div>
                 <div class="lp-value-title">Sales Tracking</div>
-                <div class="lp-value-desc">Record every sale instantly. See today, weekly & monthly revenue at a glance.</div>
+                <div class="lp-value-desc">Record every sale instantly. See today, weekly &amp; monthly revenue at a glance.</div>
             </div>
             <div class="lp-value-card">
                 <div class="lp-value-icon">📦</div>
@@ -1297,7 +1270,7 @@ def page_login():
             <div class="lp-value-card">
                 <div class="lp-value-icon">🧠</div>
                 <div class="lp-value-title">Profit Insights</div>
-                <div class="lp-value-desc">Gross profit, net profit, best-selling products and trend reports — all automatic.</div>
+                <div class="lp-value-desc">Gross profit, net profit, best-selling products and trend reports &#8212; all automatic.</div>
             </div>
         </div>
     </div>
