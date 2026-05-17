@@ -60,51 +60,51 @@ def inject_styles():
 
 /* ── CSS Variables ── */
 :root {
-    --obsidian:    #080B0F;
-    --deep:        #0D1117;
-    --surface:     #111827;
-    --surface2:    #1A2332;
-    --border:      #1F2D3D;
-    --border2:     #2D3F55;
-    --gold:        #F5A623;
-    --gold-dim:    #C4831A;
-    --gold-glow:   rgba(245,166,35,0.15);
-    --jade:        #00C896;
-    --jade-dim:    rgba(0,200,150,0.12);
-    --ruby:        #FF4D6D;
-    --ruby-dim:    rgba(255,77,109,0.12);
-    --text-primary: #F0F4F8;
-    --text-secondary: #8BA0B8;
-    --text-muted:   #4A6080;
-    --font-display: 'Syne', sans-serif;
-    --font-body:    'DM Sans', sans-serif;
-    --font-mono:    'DM Mono', monospace;
+--obsidian:    #080B0F;
+--deep:        #0D1117;
+--surface:     #111827;
+--surface2:    #1A2332;
+--border:      #1F2D3D;
+--border2:     #2D3F55;
+--gold:        #F5A623;
+--gold-dim:    #C4831A;
+--gold-glow:   rgba(245,166,35,0.15);
+--jade:        #00C896;
+--jade-dim:    rgba(0,200,150,0.12);
+--ruby:        #FF4D6D;
+--ruby-dim:    rgba(255,77,109,0.12);
+--text-primary: #F0F4F8;
+--text-secondary: #8BA0B8;
+--text-muted:   #4A6080;
+--font-display: 'Syne', sans-serif;
+--font-body:    'DM Sans', sans-serif;
+--font-mono:    'DM Mono', monospace;
 }
 
 /* ── Base Reset ── */
 html, body, [class*="css"], .stApp {
-    font-family: var(--font-body);
-    background-color: var(--deep) !important;
-    color: var(--text-primary);
+font-family: var(--font-body);
+background-color: var(--deep) !important;
+color: var(--text-primary);
 }
 #MainMenu, footer { visibility: hidden; }
 
 /* Keep header and ALL its children fully visible — sidebar toggle lives here */
 header, [data-testid="stHeader"] {
-    background:  rgba(8,11,15,0.95) !important;
-    visibility:  visible !important;
-    display:     flex    !important;
-    opacity:     1       !important;
-    z-index:     999990  !important;
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid #1F2D3D;
+background:  rgba(8,11,15,0.95) !important;
+visibility:  visible !important;
+display:     flex    !important;
+opacity:     1       !important;
+z-index:     999990  !important;
+backdrop-filter: blur(8px);
+border-bottom: 1px solid #1F2D3D;
 }
 /* Do NOT hide the toolbar — it contains the sidebar toggle button */
 header [data-testid="stToolbar"],
 [data-testid="stHeader"] [data-testid="stToolbar"] {
-    visibility:  visible !important;
-    display:     flex    !important;
-    opacity:     1       !important;
+visibility:  visible !important;
+display:     flex    !important;
+opacity:     1       !important;
 }
 
 /* Ensure every possible Streamlit sidebar toggle selector is visible */
@@ -116,64 +116,64 @@ button[aria-label="Open sidebar"],
 button[aria-label="Close sidebar"],
 button[aria-label="collapse sidebar"],
 button[aria-label="expand sidebar"] {
-    display:        flex   !important;
-    visibility:     visible !important;
-    opacity:        1      !important;
-    pointer-events: auto   !important;
+display:        flex   !important;
+visibility:     visible !important;
+opacity:        1      !important;
+pointer-events: auto   !important;
 }
 
 /* Custom sidebar tab injected by JS below */
 #bpSidebarTab {
-    position: fixed;
-    top: 50vh;
-    left: 0;
-    transform: translateY(-50%);
-    z-index: 999999;
-    background: #111827;
-    border: 1px solid #2D3F55;
-    border-left: none;
-    border-radius: 0 10px 10px 0;
-    padding: 0.6rem 0.45rem;
-    cursor: pointer;
-    box-shadow: 4px 0 16px rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s, border-color 0.15s;
+position: fixed;
+top: 50vh;
+left: 0;
+transform: translateY(-50%);
+z-index: 999999;
+background: #111827;
+border: 1px solid #2D3F55;
+border-left: none;
+border-radius: 0 10px 10px 0;
+padding: 0.6rem 0.45rem;
+cursor: pointer;
+box-shadow: 4px 0 16px rgba(0,0,0,0.5);
+display: flex;
+align-items: center;
+justify-content: center;
+transition: background 0.15s, border-color 0.15s;
 }
 #bpSidebarTab:hover { background:#1A2332; border-color:#F5A623; }
 #bpSidebarTab svg   { width:18px; height:18px; fill:#F5A623; }
 .block-container {
-    padding-top: 1.5rem !important;
-    padding-bottom: 3rem !important;
-    max-width: 1280px;
+padding-top: 1.5rem !important;
+padding-bottom: 3rem !important;
+max-width: 1280px;
 }
 
 /* ── Mobile Responsive ── */
 @media (max-width: 768px) {
-    .block-container {
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
-        padding-top: 0.75rem !important;
-    }
-    .kpi-card { padding: 1rem 1.1rem; margin-bottom: 0.6rem; }
-    .kpi-value { font-size: 1.4rem; }
-    .pricing-grid { flex-direction: column; align-items: center; }
-    .pricing-card { max-width: 100%; min-width: unset; width: 100%; }
-    .pricing-card.featured { transform: translateY(0); }
-    [data-testid="stSidebar"] { width: 240px !important; }
-    .login-value-grid {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.6rem !important;
-    }
-    .login-feature-strip {
-        flex-direction: column !important;
-        gap: 0.5rem !important;
-    }
+.block-container {
+padding-left: 0.75rem !important;
+padding-right: 0.75rem !important;
+padding-top: 0.75rem !important;
+}
+.kpi-card { padding: 1rem 1.1rem; margin-bottom: 0.6rem; }
+.kpi-value { font-size: 1.4rem; }
+.pricing-grid { flex-direction: column; align-items: center; }
+.pricing-card { max-width: 100%; min-width: unset; width: 100%; }
+.pricing-card.featured { transform: translateY(0); }
+[data-testid="stSidebar"] { width: 240px !important; }
+.login-value-grid {
+grid-template-columns: 1fr 1fr !important;
+gap: 0.6rem !important;
+}
+.login-feature-strip {
+flex-direction: column !important;
+gap: 0.5rem !important;
+}
 }
 @media (max-width: 480px) {
-    .kpi-value { font-size: 1.2rem; }
-    .login-value-grid { grid-template-columns: 1fr 1fr !important; }
+.kpi-value { font-size: 1.2rem; }
+.login-value-grid { grid-template-columns: 1fr 1fr !important; }
 }
 
 /* ── Streamlit input overrides ── */
@@ -182,151 +182,151 @@ button[aria-label="expand sidebar"] {
 .stSelectbox > div > div,
 .stDateInput > div > div > input,
 .stTextArea textarea {
-    background: var(--surface) !important;
-    border: 1px solid var(--border2) !important;
-    border-radius: 10px !important;
-    color: var(--text-primary) !important;
-    font-family: var(--font-body) !important;
+background: var(--surface) !important;
+border: 1px solid var(--border2) !important;
+border-radius: 10px !important;
+color: var(--text-primary) !important;
+font-family: var(--font-body) !important;
 }
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > div > input:focus,
 .stTextArea textarea:focus {
-    border-color: var(--gold) !important;
-    box-shadow: 0 0 0 3px var(--gold-glow) !important;
+border-color: var(--gold) !important;
+box-shadow: 0 0 0 3px var(--gold-glow) !important;
 }
 label, .stRadio label, .stCheckbox label {
-    color: var(--text-secondary) !important;
-    font-family: var(--font-body) !important;
-    font-size: 0.85rem !important;
-    font-weight: 500 !important;
+color: var(--text-secondary) !important;
+font-family: var(--font-body) !important;
+font-size: 0.85rem !important;
+font-weight: 500 !important;
 }
 .stRadio > div { gap: 0.5rem; }
 
 /* ── KPI Cards ── */
 .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.4rem 1.6rem;
-    color: var(--text-primary);
-    margin-bottom: 1rem;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s, transform 0.2s;
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 16px;
+padding: 1.4rem 1.6rem;
+color: var(--text-primary);
+margin-bottom: 1rem;
+position: relative;
+overflow: hidden;
+transition: border-color 0.2s, transform 0.2s;
 }
 .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--gold), transparent);
-    opacity: 0.6;
+content: '';
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 2px;
+background: linear-gradient(90deg, var(--gold), transparent);
+opacity: 0.6;
 }
 .kpi-card:hover {
-    border-color: var(--border2);
-    transform: translateY(-2px);
+border-color: var(--border2);
+transform: translateY(-2px);
 }
 .kpi-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 0.5rem;
-    font-family: var(--font-body);
+font-size: 0.7rem;
+font-weight: 600;
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(--text-muted);
+margin-bottom: 0.5rem;
+font-family: var(--font-body);
 }
 .kpi-value {
-    font-size: 1.85rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    font-family: var(--font-mono);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+font-size: 1.85rem;
+font-weight: 700;
+color: var(--text-primary);
+font-family: var(--font-mono);
+line-height: 1.1;
+letter-spacing: -0.02em;
 }
 .kpi-sub {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 0.4rem;
-    font-family: var(--font-body);
+font-size: 0.75rem;
+color: var(--text-muted);
+margin-top: 0.4rem;
+font-family: var(--font-body);
 }
 .kpi-positive { color: var(--jade) !important; }
 .kpi-negative { color: var(--ruby) !important; }
 
 /* ── Alert Cards ── */
 .alert-low {
-    background: rgba(245,166,35,0.08);
-    border: 1px solid rgba(245,166,35,0.25);
-    border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem;
-    color: #F5A623; font-size: 0.85rem;
+background: rgba(245,166,35,0.08);
+border: 1px solid rgba(245,166,35,0.25);
+border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+color: #F5A623; font-size: 0.85rem;
 }
 .alert-critical {
-    background: var(--ruby-dim);
-    border: 1px solid rgba(255,77,109,0.3);
-    border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem;
-    color: #FF4D6D; font-size: 0.85rem;
+background: var(--ruby-dim);
+border: 1px solid rgba(255,77,109,0.3);
+border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+color: #FF4D6D; font-size: 0.85rem;
 }
 .alert-success {
-    background: var(--jade-dim);
-    border: 1px solid rgba(0,200,150,0.3);
-    border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem;
-    color: var(--jade); font-size: 0.85rem;
+background: var(--jade-dim);
+border: 1px solid rgba(0,200,150,0.3);
+border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+color: var(--jade); font-size: 0.85rem;
 }
 
 /* ── Section Headers ── */
 .section-header {
-    font-size: 1rem; font-weight: 700;
-    font-family: var(--font-display);
-    color: var(--text-primary);
-    margin: 1.75rem 0 0.875rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
-    letter-spacing: -0.01em;
+font-size: 1rem; font-weight: 700;
+font-family: var(--font-display);
+color: var(--text-primary);
+margin: 1.75rem 0 0.875rem 0;
+padding-bottom: 0.5rem;
+border-bottom: 1px solid var(--border);
+letter-spacing: -0.01em;
 }
 
 /* ── Page Title ── */
 .page-title {
-    font-size: 1.75rem; font-weight: 800;
-    font-family: var(--font-display);
-    color: var(--text-primary);
-    margin-bottom: 0.2rem;
-    letter-spacing: -0.03em;
+font-size: 1.75rem; font-weight: 800;
+font-family: var(--font-display);
+color: var(--text-primary);
+margin-bottom: 0.2rem;
+letter-spacing: -0.03em;
 }
 .page-subtitle {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-bottom: 1.5rem;
+font-size: 0.875rem;
+color: var(--text-secondary);
+margin-bottom: 1.5rem;
 }
 
 /* ── Auth Card ── */
 .auth-card {
-    max-width: 480px; margin: 2rem auto;
-    background: var(--surface);
-    border-radius: 20px;
-    padding: 2.5rem;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
-    border: 1px solid var(--border2);
+max-width: 480px; margin: 2rem auto;
+background: var(--surface);
+border-radius: 20px;
+padding: 2.5rem;
+box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px var(--border);
+border: 1px solid var(--border2);
 }
 .auth-logo {
-    font-size: 1.75rem; font-weight: 800;
-    font-family: var(--font-display);
-    color: var(--text-primary);
-    text-align: center; margin-bottom: 0.25rem;
-    letter-spacing: -0.04em;
+font-size: 1.75rem; font-weight: 800;
+font-family: var(--font-display);
+color: var(--text-primary);
+text-align: center; margin-bottom: 0.25rem;
+letter-spacing: -0.04em;
 }
 .auth-tagline {
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 0.85rem; margin-bottom: 2rem;
+text-align: center;
+color: var(--text-muted);
+font-size: 0.85rem; margin-bottom: 2rem;
 }
 
 /* ── Auth form wrap ── */
 .auth-form-wrap {
-    max-width: 480px; margin: 0 auto;
-    background: var(--surface);
-    border-radius: 20px;
-    padding: 2.5rem;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
-    border: 1px solid var(--border2);
+max-width: 480px; margin: 0 auto;
+background: var(--surface);
+border-radius: 20px;
+padding: 2.5rem;
+box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+border: 1px solid var(--border2);
 }
 
 /* ── Stock Status Pills ── */
@@ -336,96 +336,96 @@ label, .stRadio label, .stCheckbox label {
 
 /* ── Sidebar ── */
 [data-testid="stSidebar"] {
-    background: var(--obsidian) !important;
-    border-right: 1px solid var(--border) !important;
+background: var(--obsidian) !important;
+border-right: 1px solid var(--border) !important;
 }
 [data-testid="stSidebar"] * {
-    color: var(--text-secondary) !important;
-    font-family: var(--font-body) !important;
+color: var(--text-secondary) !important;
+font-family: var(--font-body) !important;
 }
 [data-testid="stSidebar"] .stButton > button {
-    background: transparent !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text-secondary) !important;
-    text-align: left !important;
-    border-radius: 10px !important;
-    font-weight: 500 !important;
-    transition: all 0.15s !important;
-    padding: 0.6rem 1rem !important;
+background: transparent !important;
+border: 1px solid var(--border) !important;
+color: var(--text-secondary) !important;
+text-align: left !important;
+border-radius: 10px !important;
+font-weight: 500 !important;
+transition: all 0.15s !important;
+padding: 0.6rem 1rem !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-    border-color: var(--gold) !important;
-    color: var(--gold) !important;
-    background: var(--gold-glow) !important;
+border-color: var(--gold) !important;
+color: var(--gold) !important;
+background: var(--gold-glow) !important;
 }
 
 /* ── Buttons ── */
 .stButton > button {
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    font-family: var(--font-body) !important;
-    transition: all 0.2s !important;
-    letter-spacing: 0.01em !important;
+border-radius: 10px !important;
+font-weight: 600 !important;
+font-family: var(--font-body) !important;
+transition: all 0.2s !important;
+letter-spacing: 0.01em !important;
 }
 .stButton > button[kind="primary"] {
-    background: var(--gold) !important;
-    border: none !important;
-    color: #080B0F !important;
-    font-weight: 700 !important;
-    box-shadow: 0 4px 20px rgba(245,166,35,0.35) !important;
+background: var(--gold) !important;
+border: none !important;
+color: #080B0F !important;
+font-weight: 700 !important;
+box-shadow: 0 4px 20px rgba(245,166,35,0.35) !important;
 }
 .stButton > button[kind="primary"]:hover {
-    background: #FFB83F !important;
-    box-shadow: 0 6px 28px rgba(245,166,35,0.5) !important;
-    transform: translateY(-1px) !important;
+background: #FFB83F !important;
+box-shadow: 0 6px 28px rgba(245,166,35,0.5) !important;
+transform: translateY(-1px) !important;
 }
 .stLinkButton > a {
-    background: var(--gold) !important;
-    color: #080B0F !important;
-    font-weight: 700 !important;
-    border-radius: 10px !important;
-    border: none !important;
-    box-shadow: 0 4px 20px rgba(245,166,35,0.35) !important;
+background: var(--gold) !important;
+color: #080B0F !important;
+font-weight: 700 !important;
+border-radius: 10px !important;
+border: none !important;
+box-shadow: 0 4px 20px rgba(245,166,35,0.35) !important;
 }
 .stLinkButton > a:hover {
-    background: #FFB83F !important;
-    box-shadow: 0 6px 28px rgba(245,166,35,0.5) !important;
+background: #FFB83F !important;
+box-shadow: 0 6px 28px rgba(245,166,35,0.5) !important;
 }
 
 /* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: var(--surface) !important;
-    border-radius: 12px !important;
-    border: 1px solid var(--border) !important;
-    padding: 4px !important;
-    gap: 2px !important;
+background: var(--surface) !important;
+border-radius: 12px !important;
+border: 1px solid var(--border) !important;
+padding: 4px !important;
+gap: 2px !important;
 }
 .stTabs [data-baseweb="tab"] {
-    background: transparent !important;
-    color: var(--text-muted) !important;
-    border-radius: 8px !important;
-    font-family: var(--font-body) !important;
-    font-weight: 500 !important;
-    font-size: 0.82rem !important;
+background: transparent !important;
+color: var(--text-muted) !important;
+border-radius: 8px !important;
+font-family: var(--font-body) !important;
+font-weight: 500 !important;
+font-size: 0.82rem !important;
 }
 .stTabs [aria-selected="true"] {
-    background: var(--surface2) !important;
-    color: var(--gold) !important;
-    border: 1px solid var(--border2) !important;
+background: var(--surface2) !important;
+color: var(--gold) !important;
+border: 1px solid var(--border2) !important;
 }
 .stTabs [data-baseweb="tab-panel"] {
-    padding-top: 1.25rem !important;
+padding-top: 1.25rem !important;
 }
 
 /* ── Metrics / dataframes ── */
 [data-testid="stMetricValue"] {
-    color: var(--text-primary) !important;
-    font-family: var(--font-mono) !important;
+color: var(--text-primary) !important;
+font-family: var(--font-mono) !important;
 }
 .stDataFrame {
-    border: 1px solid var(--border) !important;
-    border-radius: 12px !important;
-    overflow: hidden;
+border: 1px solid var(--border) !important;
+border-radius: 12px !important;
+overflow: hidden;
 }
 
 /* ── Dividers ── */
@@ -433,103 +433,103 @@ hr { border-color: var(--border) !important; }
 
 /* ── Pricing Cards ── */
 .pricing-grid {
-    display: flex; gap: 1.25rem;
-    justify-content: center;
-    flex-wrap: wrap; margin: 2rem 0;
+display: flex; gap: 1.25rem;
+justify-content: center;
+flex-wrap: wrap; margin: 2rem 0;
 }
 .pricing-card {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 20px;
-    padding: 2rem 1.75rem;
-    flex: 1; min-width: 220px; max-width: 290px;
-    text-align: center;
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-    position: relative;
+background: var(--surface);
+border: 1px solid var(--border2);
+border-radius: 20px;
+padding: 2rem 1.75rem;
+flex: 1; min-width: 220px; max-width: 290px;
+text-align: center;
+transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+position: relative;
 }
 .pricing-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 24px 48px rgba(0,0,0,0.4);
-    border-color: var(--border2);
+transform: translateY(-4px);
+box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+border-color: var(--border2);
 }
 .pricing-card.featured {
-    border-color: var(--gold);
-    background: linear-gradient(160deg, #1A1A0A 0%, #1A1505 100%);
-    transform: translateY(-8px);
-    box-shadow: 0 32px 64px rgba(245,166,35,0.12), 0 0 0 1px var(--gold);
+border-color: var(--gold);
+background: linear-gradient(160deg, #1A1A0A 0%, #1A1505 100%);
+transform: translateY(-8px);
+box-shadow: 0 32px 64px rgba(245,166,35,0.12), 0 0 0 1px var(--gold);
 }
 .pricing-badge {
-    position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
-    background: var(--gold);
-    color: #080B0F;
-    font-size: 0.62rem; font-weight: 800;
-    padding: 4px 14px; border-radius: 99px;
-    text-transform: uppercase; letter-spacing: 0.1em;
-    white-space: nowrap;
-    font-family: var(--font-body);
+position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+background: var(--gold);
+color: #080B0F;
+font-size: 0.62rem; font-weight: 800;
+padding: 4px 14px; border-radius: 99px;
+text-transform: uppercase; letter-spacing: 0.1em;
+white-space: nowrap;
+font-family: var(--font-body);
 }
 .pricing-plan-name {
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em;
-    text-transform: uppercase; color: var(--text-muted);
-    margin-bottom: 0.75rem;
-    font-family: var(--font-body);
+font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em;
+text-transform: uppercase; color: var(--text-muted);
+margin-bottom: 0.75rem;
+font-family: var(--font-body);
 }
 .pricing-price {
-    font-size: 2.2rem; font-weight: 700; color: var(--text-primary);
-    font-family: var(--font-mono); line-height: 1;
-    letter-spacing: -0.03em;
+font-size: 2.2rem; font-weight: 700; color: var(--text-primary);
+font-family: var(--font-mono); line-height: 1;
+letter-spacing: -0.03em;
 }
 .pricing-price span {
-    font-size: 0.9rem; font-weight: 400; color: var(--text-muted);
-    font-family: var(--font-body);
+font-size: 0.9rem; font-weight: 400; color: var(--text-muted);
+font-family: var(--font-body);
 }
 .pricing-desc {
-    font-size: 0.78rem; color: var(--text-muted);
-    margin: 0.5rem 0 1.25rem 0;
+font-size: 0.78rem; color: var(--text-muted);
+margin: 0.5rem 0 1.25rem 0;
 }
 .pricing-features {
-    list-style: none; padding: 0; margin: 0 0 1.5rem 0; text-align: left;
+list-style: none; padding: 0; margin: 0 0 1.5rem 0; text-align: left;
 }
 .pricing-features li {
-    font-size: 0.82rem; color: var(--text-secondary);
-    padding: 0.4rem 0; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 0.5rem;
+font-size: 0.82rem; color: var(--text-secondary);
+padding: 0.4rem 0; border-bottom: 1px solid var(--border);
+display: flex; align-items: center; gap: 0.5rem;
 }
 .pricing-features li:last-child { border-bottom: none; }
 .pricing-features li::before {
-    content: "✓"; color: var(--jade);
-    font-weight: 700; flex-shrink: 0;
+content: "✓"; color: var(--jade);
+font-weight: 700; flex-shrink: 0;
 }
 
 /* ── Forgot password ── */
 .forgot-link {
-    font-size: 0.82rem; color: var(--gold);
-    text-decoration: none; cursor: pointer; font-weight: 500;
+font-size: 0.82rem; color: var(--gold);
+text-decoration: none; cursor: pointer; font-weight: 500;
 }
 
 /* ── Form containers ── */
 [data-testid="stForm"] {
-    background: transparent !important;
-    border: none !important;
+background: transparent !important;
+border: none !important;
 }
 .stForm { border: none !important; }
 
 /* ── Expander ── */
 [data-testid="stExpander"] {
-    background: var(--surface) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 12px !important;
+background: var(--surface) !important;
+border: 1px solid var(--border) !important;
+border-radius: 12px !important;
 }
 [data-testid="stExpander"] summary {
-    color: var(--text-secondary) !important;
-    font-family: var(--font-body) !important;
+color: var(--text-secondary) !important;
+font-family: var(--font-body) !important;
 }
 
 /* ── Info / Warning / Success / Error boxes ── */
 [data-testid="stAlert"] {
-    border-radius: 12px !important;
-    border-left-width: 3px !important;
-    font-family: var(--font-body) !important;
+border-radius: 12px !important;
+border-left-width: 3px !important;
+font-family: var(--font-body) !important;
 }
 
 /* ── Spinner ── */
@@ -537,86 +537,86 @@ hr { border-color: var(--border) !important; }
 
 /* ── Plan radio button enhancement ── */
 .stRadio > div > label {
-    background: var(--surface) !important;
-    border: 1px solid var(--border2) !important;
-    border-radius: 10px !important;
-    padding: 0.75rem 1rem !important;
-    transition: border-color 0.15s !important;
+background: var(--surface) !important;
+border: 1px solid var(--border2) !important;
+border-radius: 10px !important;
+padding: 0.75rem 1rem !important;
+transition: border-color 0.15s !important;
 }
 .stRadio > div > label:has(input:checked) {
-    border-color: var(--gold) !important;
-    background: var(--gold-glow) !important;
+border-color: var(--gold) !important;
+background: var(--gold-glow) !important;
 }
 
 /* ── Login landing page ── */
 .lp-hero { text-align:center; padding:2.5rem 1rem 1.5rem 1rem; }
 .lp-logo-wrap {
-    display:inline-flex; align-items:center; gap:0.75rem;
-    margin-bottom:1.25rem;
+display:inline-flex; align-items:center; gap:0.75rem;
+margin-bottom:1.25rem;
 }
 .lp-logo-icon {
-    width:52px; height:52px; border-radius:14px;
-    background:linear-gradient(135deg,#F5A623,#C4831A);
-    display:flex; align-items:center; justify-content:center;
-    font-size:1.6rem; box-shadow:0 8px 28px rgba(245,166,35,0.45);
+width:52px; height:52px; border-radius:14px;
+background:linear-gradient(135deg,#F5A623,#C4831A);
+display:flex; align-items:center; justify-content:center;
+font-size:1.6rem; box-shadow:0 8px 28px rgba(245,166,35,0.45);
 }
 .lp-logo-text {
-    font-family:'Syne',sans-serif;
-    font-size:2.2rem; font-weight:800;
-    color:#F0F4F8; letter-spacing:-0.05em;
+font-family:'Syne',sans-serif;
+font-size:2.2rem; font-weight:800;
+color:#F0F4F8; letter-spacing:-0.05em;
 }
 .lp-badge {
-    display:inline-flex; align-items:center; gap:0.45rem;
-    background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3);
-    border-radius:99px; padding:0.35rem 1rem;
-    font-size:0.75rem; color:#F5A623; font-weight:600;
-    letter-spacing:0.04em; margin-bottom:1.25rem;
+display:inline-flex; align-items:center; gap:0.45rem;
+background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3);
+border-radius:99px; padding:0.35rem 1rem;
+font-size:0.75rem; color:#F5A623; font-weight:600;
+letter-spacing:0.04em; margin-bottom:1.25rem;
 }
 .lp-headline {
-    font-family:'Syne',sans-serif;
-    font-size:clamp(1.7rem,5vw,2.6rem);
-    font-weight:800; color:#F0F4F8;
-    letter-spacing:-0.04em; line-height:1.15; margin-bottom:0.75rem;
+font-family:'Syne',sans-serif;
+font-size:clamp(1.7rem,5vw,2.6rem);
+font-weight:800; color:#F0F4F8;
+letter-spacing:-0.04em; line-height:1.15; margin-bottom:0.75rem;
 }
 .lp-headline span { color:#F5A623; }
 .lp-sub {
-    font-size:1rem; color:#8BA0B8;
-    max-width:520px; margin:0 auto 1.75rem auto; line-height:1.65;
+font-size:1rem; color:#8BA0B8;
+max-width:520px; margin:0 auto 1.75rem auto; line-height:1.65;
 }
 .lp-value-grid {
-    display:grid; grid-template-columns:repeat(4,1fr);
-    gap:0.75rem; max-width:720px; margin:0 auto 2rem auto;
+display:grid; grid-template-columns:repeat(4,1fr);
+gap:0.75rem; max-width:720px; margin:0 auto 2rem auto;
 }
 .lp-value-card {
-    background:#111827; border:1px solid #1F2D3D;
-    border-radius:14px; padding:1.1rem 1rem;
-    text-align:center; transition:border-color 0.2s;
+background:#111827; border:1px solid #1F2D3D;
+border-radius:14px; padding:1.1rem 1rem;
+text-align:center; transition:border-color 0.2s;
 }
 .lp-value-card:hover { border-color:#F5A623; }
 .lp-value-icon { font-size:1.5rem; margin-bottom:0.4rem; }
 .lp-value-title {
-    font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700;
-    color:#F0F4F8; margin-bottom:0.2rem;
+font-family:'Syne',sans-serif; font-size:0.8rem; font-weight:700;
+color:#F0F4F8; margin-bottom:0.2rem;
 }
 .lp-value-desc { font-size:0.72rem; color:#4A6080; line-height:1.4; }
 .lp-divider {
-    display:flex; align-items:center; gap:1rem;
-    max-width:480px; margin:0 auto 1.5rem auto;
+display:flex; align-items:center; gap:1rem;
+max-width:480px; margin:0 auto 1.5rem auto;
 }
 .lp-divider::before, .lp-divider::after {
-    content:''; flex:1; border-top:1px solid #1F2D3D;
+content:''; flex:1; border-top:1px solid #1F2D3D;
 }
 .lp-divider span { font-size:0.75rem; color:#4A6080; white-space:nowrap; }
 .lp-trust-strip {
-    display:flex; justify-content:center; align-items:center;
-    gap:1.5rem; flex-wrap:wrap; padding:1rem 0;
-    border-top:1px solid #1F2D3D; margin-top:1rem;
+display:flex; justify-content:center; align-items:center;
+gap:1.5rem; flex-wrap:wrap; padding:1rem 0;
+border-top:1px solid #1F2D3D; margin-top:1rem;
 }
 .lp-trust-item { display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:#4A6080; }
 .lp-trust-item span { color:#00C896; }
 @media (max-width:600px) {
-    .lp-value-grid { grid-template-columns:1fr 1fr !important; }
-    .lp-trust-strip { gap:0.75rem; }
+.lp-value-grid { grid-template-columns:1fr 1fr !important; }
+.lp-trust-strip { gap:0.75rem; }
 }
 
 </style>
@@ -632,33 +632,33 @@ def inject_sidebar_toggle():
     st.markdown("""
 <script>
 (function() {
-    // Ensure Streamlit's own sidebar toggle button stays visible.
-    // We find it by every known selector and force visibility.
-    function ensureToggleVisible() {
-        var selectors = [
-            '[data-testid="collapsedControl"]',
-            '[data-testid="stSidebarCollapsedControl"]',
-            '[data-testid="stSidebarToggle"]',
-            '[data-testid="stSidebarToggleButton"]',
-            'button[aria-label="Open sidebar"]',
-            'button[aria-label="Close sidebar"]',
-            'button[aria-label="collapse sidebar"]',
-            'button[aria-label="expand sidebar"]'
-        ];
-        selectors.forEach(function(sel) {
-            var el = document.querySelector(sel);
-            if (el) {
-                el.style.display    = '';
-                el.style.visibility = 'visible';
-                el.style.opacity    = '1';
-                el.style.pointerEvents = 'auto';
-            }
-        });
-    }
-    // Run immediately and after a short delay to catch late mounts
-    ensureToggleVisible();
-    setTimeout(ensureToggleVisible, 500);
-    setTimeout(ensureToggleVisible, 1500);
+// Ensure Streamlit's own sidebar toggle button stays visible.
+// We find it by every known selector and force visibility.
+function ensureToggleVisible() {
+var selectors = [
+'[data-testid="collapsedControl"]',
+'[data-testid="stSidebarCollapsedControl"]',
+'[data-testid="stSidebarToggle"]',
+'[data-testid="stSidebarToggleButton"]',
+'button[aria-label="Open sidebar"]',
+'button[aria-label="Close sidebar"]',
+'button[aria-label="collapse sidebar"]',
+'button[aria-label="expand sidebar"]'
+];
+selectors.forEach(function(sel) {
+var el = document.querySelector(sel);
+if (el) {
+el.style.display    = '';
+el.style.visibility = 'visible';
+el.style.opacity    = '1';
+el.style.pointerEvents = 'auto';
+}
+});
+}
+// Run immediately and after a short delay to catch late mounts
+ensureToggleVisible();
+setTimeout(ensureToggleVisible, 500);
+setTimeout(ensureToggleVisible, 1500);
 })();
 </script>
     """, unsafe_allow_html=True)
@@ -1163,9 +1163,9 @@ def kpi_card(label, value, sub="", positive=None):
         sub_class = "kpi-negative"
     st.markdown(f"""
 <div class="kpi-card">
-    <div class="kpi-label">{label}</div>
-    <div class="kpi-value">{value}</div>
-    {f'<div class="kpi-sub {sub_class}">{sub}</div>' if sub else ""}
+<div class="kpi-label">{label}</div>
+<div class="kpi-value">{value}</div>
+{f'<div class="kpi-sub {sub_class}">{sub}</div>' if sub else ""}
 </div>
     """, unsafe_allow_html=True)
 
@@ -1173,19 +1173,19 @@ def kpi_card(label, value, sub="", positive=None):
 def section_header(title):
     st.markdown(f"""
 <div style="
-    font-family:'Syne',sans-serif;
-    font-size:0.95rem;font-weight:700;
-    color:#F0F4F8;letter-spacing:-0.01em;
-    margin:1.75rem 0 0.875rem 0;
-    padding-bottom:0.5rem;
-    border-bottom:1px solid #1F2D3D;
-    display:flex;align-items:center;gap:0.5rem;
+font-family:'Syne',sans-serif;
+font-size:0.95rem;font-weight:700;
+color:#F0F4F8;letter-spacing:-0.01em;
+margin:1.75rem 0 0.875rem 0;
+padding-bottom:0.5rem;
+border-bottom:1px solid #1F2D3D;
+display:flex;align-items:center;gap:0.5rem;
 ">
-    <span style="
-        display:inline-block;width:3px;height:16px;
-        background:#F5A623;border-radius:2px;flex-shrink:0;
-    "></span>
-    {title}
+<span style="
+display:inline-block;width:3px;height:16px;
+background:#F5A623;border-radius:2px;flex-shrink:0;
+"></span>
+{title}
 </div>
     """, unsafe_allow_html=True)
 
@@ -1194,23 +1194,23 @@ def page_header(title, subtitle=""):
     now_str = datetime.now().strftime("%A, %d %B %Y")
     st.markdown(f"""
 <div style="
-    display:flex;justify-content:space-between;align-items:flex-start;
-    margin-bottom:1.5rem;padding-bottom:1rem;
-    border-bottom:1px solid #1F2D3D;
+display:flex;justify-content:space-between;align-items:flex-start;
+margin-bottom:1.5rem;padding-bottom:1rem;
+border-bottom:1px solid #1F2D3D;
 ">
-    <div>
-        <div style="
-            font-family:'Syne',sans-serif;
-            font-size:1.6rem;font-weight:800;
-            color:#F0F4F8;letter-spacing:-0.04em;
-            line-height:1.1;margin-bottom:0.25rem;
-        ">{title}</div>
-        {f'<div style="font-size:0.85rem;color:#4A6080;">{subtitle}</div>' if subtitle else ""}
-    </div>
-    <div style="
-        font-size:0.75rem;color:#4A6080;text-align:right;
-        font-family:'DM Mono',monospace;margin-top:0.35rem;
-    ">{now_str}</div>
+<div>
+<div style="
+font-family:'Syne',sans-serif;
+font-size:1.6rem;font-weight:800;
+color:#F0F4F8;letter-spacing:-0.04em;
+line-height:1.1;margin-bottom:0.25rem;
+">{title}</div>
+{f'<div style="font-size:0.85rem;color:#4A6080;">{subtitle}</div>' if subtitle else ""}
+</div>
+<div style="
+font-size:0.75rem;color:#4A6080;text-align:right;
+font-family:'DM Mono',monospace;margin-top:0.35rem;
+">{now_str}</div>
 </div>
     """, unsafe_allow_html=True)
 
@@ -1236,43 +1236,43 @@ def page_login():
     # ── Premium landing hero above the fold ──
     st.markdown("""
 <div class="lp-hero">
-    <div class="lp-logo-wrap">
-        <div class="lp-logo-icon">📊</div>
-        <div class="lp-logo-text">BizPulse</div>
-    </div>
-    <div class="lp-badge">
-        <span>&#9679;</span> Built for Nigerian SMEs &middot; Powered by real-time data
-    </div>
-    <div class="lp-headline">
-        Run your business<br>like you <span>know your numbers.</span>
-    </div>
-    <div class="lp-sub">
-        Sales tracking, inventory control, expense management and profit analytics &#8212;
-        all in one dashboard designed for the way Nigerian businesses actually work.
-    </div>
+<div class="lp-logo-wrap">
+<div class="lp-logo-icon">📊</div>
+<div class="lp-logo-text">BizPulse</div>
+</div>
+<div class="lp-badge">
+<span>&#9679;</span> Built for Nigerian SMEs &middot; Powered by real-time data
+</div>
+<div class="lp-headline">
+Run your business<br>like you <span>know your numbers.</span>
+</div>
+<div class="lp-sub">
+Sales tracking, inventory control, expense management and profit analytics &#8212;
+all in one dashboard designed for the way Nigerian businesses actually work.
+</div>
 
-    <div class="lp-value-grid">
-        <div class="lp-value-card">
-            <div class="lp-value-icon">🛒</div>
-            <div class="lp-value-title">Sales Tracking</div>
-            <div class="lp-value-desc">Record every sale instantly. See today, weekly &amp; monthly revenue at a glance.</div>
-        </div>
-        <div class="lp-value-card">
-            <div class="lp-value-icon">📦</div>
-            <div class="lp-value-title">Inventory Control</div>
-            <div class="lp-value-desc">Track stock levels, get low-stock alerts and never run out of top sellers.</div>
-        </div>
-        <div class="lp-value-card">
-            <div class="lp-value-icon">💸</div>
-            <div class="lp-value-title">Expense Manager</div>
-            <div class="lp-value-desc">Log every expense, see where your money goes and protect your profit margins.</div>
-        </div>
-        <div class="lp-value-card">
-            <div class="lp-value-icon">🧠</div>
-            <div class="lp-value-title">Profit Insights</div>
-            <div class="lp-value-desc">Gross profit, net profit, best-selling products and trend reports &#8212; all automatic.</div>
-        </div>
-    </div>
+<div class="lp-value-grid">
+<div class="lp-value-card">
+<div class="lp-value-icon">🛒</div>
+<div class="lp-value-title">Sales Tracking</div>
+<div class="lp-value-desc">Record every sale instantly. See today, weekly &amp; monthly revenue at a glance.</div>
+</div>
+<div class="lp-value-card">
+<div class="lp-value-icon">📦</div>
+<div class="lp-value-title">Inventory Control</div>
+<div class="lp-value-desc">Track stock levels, get low-stock alerts and never run out of top sellers.</div>
+</div>
+<div class="lp-value-card">
+<div class="lp-value-icon">💸</div>
+<div class="lp-value-title">Expense Manager</div>
+<div class="lp-value-desc">Log every expense, see where your money goes and protect your profit margins.</div>
+</div>
+<div class="lp-value-card">
+<div class="lp-value-icon">🧠</div>
+<div class="lp-value-title">Profit Insights</div>
+<div class="lp-value-desc">Gross profit, net profit, best-selling products and trend reports &#8212; all automatic.</div>
+</div>
+</div>
 </div>
 
 <div class="lp-divider"><span>Sign in to your account</span></div>
@@ -1321,11 +1321,11 @@ def page_login():
     # ── Trust strip ──
     st.markdown("""
 <div class="lp-trust-strip">
-    <div class="lp-trust-item"><span>✓</span> 256-bit encrypted</div>
-    <div class="lp-trust-item"><span>✓</span> Your data is never shared</div>
-    <div class="lp-trust-item"><span>✓</span> 14-day free trial</div>
-    <div class="lp-trust-item"><span>✓</span> No credit card required</div>
-    <div class="lp-trust-item"><span>✓</span> Cancel anytime</div>
+<div class="lp-trust-item"><span>✓</span> 256-bit encrypted</div>
+<div class="lp-trust-item"><span>✓</span> Your data is never shared</div>
+<div class="lp-trust-item"><span>✓</span> 14-day free trial</div>
+<div class="lp-trust-item"><span>✓</span> No credit card required</div>
+<div class="lp-trust-item"><span>✓</span> Cancel anytime</div>
 </div>
     """, unsafe_allow_html=True)
 
@@ -1340,92 +1340,92 @@ def page_signup():
     # ── Hero ──
     st.markdown("""
 <div style="text-align:center;padding:2.5rem 1rem 0.5rem 1rem;">
-    <div style="display:inline-flex;align-items:center;gap:0.7rem;margin-bottom:1.25rem;">
-        <div style="
-            width:48px;height:48px;border-radius:14px;
-            background:linear-gradient(135deg,#F5A623,#C4831A);
-            display:flex;align-items:center;justify-content:center;
-            font-size:1.4rem;
-            box-shadow:0 6px 24px rgba(245,166,35,0.4);
-        ">📊</div>
-        <div style="
-            font-family:'Syne',sans-serif;
-            font-size:2rem;font-weight:800;
-            color:#F0F4F8;letter-spacing:-0.05em;
-        ">BizPulse</div>
-    </div>
-    <div style="
-        font-family:'Syne',sans-serif;
-        font-size:1.5rem;font-weight:700;
-        color:#F0F4F8;letter-spacing:-0.03em;
-        margin-bottom:0.6rem;line-height:1.2;
-    ">
-        Know your numbers.<br>
-        <span style="color:#F5A623;">Grow your business.</span>
-    </div>
-    <div style="
-        font-size:0.9rem;color:#4A6080;
-        max-width:460px;margin:0 auto;line-height:1.6;
-    ">
-        Sales tracking · Inventory management · Expense control ·
-        Profit analytics — built for Nigerian SMEs.
-    </div>
-    <div style="
-        display:inline-flex;align-items:center;gap:0.5rem;
-        margin-top:1.25rem;
-        background:#0D1117;border:1px solid #1F2D3D;
-        border-radius:99px;padding:0.4rem 1rem;
-        font-size:0.78rem;color:#8BA0B8;
-    ">
-        <span style="color:#F5A623;">●</span>
-        14-day free trial · No card required · Cancel anytime
-    </div>
+<div style="display:inline-flex;align-items:center;gap:0.7rem;margin-bottom:1.25rem;">
+<div style="
+width:48px;height:48px;border-radius:14px;
+background:linear-gradient(135deg,#F5A623,#C4831A);
+display:flex;align-items:center;justify-content:center;
+font-size:1.4rem;
+box-shadow:0 6px 24px rgba(245,166,35,0.4);
+">📊</div>
+<div style="
+font-family:'Syne',sans-serif;
+font-size:2rem;font-weight:800;
+color:#F0F4F8;letter-spacing:-0.05em;
+">BizPulse</div>
+</div>
+<div style="
+font-family:'Syne',sans-serif;
+font-size:1.5rem;font-weight:700;
+color:#F0F4F8;letter-spacing:-0.03em;
+margin-bottom:0.6rem;line-height:1.2;
+">
+Know your numbers.<br>
+<span style="color:#F5A623;">Grow your business.</span>
+</div>
+<div style="
+font-size:0.9rem;color:#4A6080;
+max-width:460px;margin:0 auto;line-height:1.6;
+">
+Sales tracking · Inventory management · Expense control ·
+Profit analytics — built for Nigerian SMEs.
+</div>
+<div style="
+display:inline-flex;align-items:center;gap:0.5rem;
+margin-top:1.25rem;
+background:#0D1117;border:1px solid #1F2D3D;
+border-radius:99px;padding:0.4rem 1rem;
+font-size:0.78rem;color:#8BA0B8;
+">
+<span style="color:#F5A623;">●</span>
+14-day free trial · No card required · Cancel anytime
+</div>
 </div>
     """, unsafe_allow_html=True)
 
     # ── Pricing Cards ──
     st.markdown("""
 <div class="pricing-grid">
-  <div class="pricing-card">
-    <div class="pricing-plan-name">Free Trial</div>
-    <div class="pricing-price">₦0<span>/14 days</span></div>
-    <div class="pricing-desc">No card required. Full access.</div>
-    <ul class="pricing-features">
-      <li>Sales recording</li>
-      <li>Inventory management</li>
-      <li>Expense tracking</li>
-      <li>Dashboard analytics</li>
-      <li>Up to 50 products</li>
-    </ul>
-  </div>
+<div class="pricing-card">
+<div class="pricing-plan-name">Free Trial</div>
+<div class="pricing-price">₦0<span>/14 days</span></div>
+<div class="pricing-desc">No card required. Full access.</div>
+<ul class="pricing-features">
+<li>Sales recording</li>
+<li>Inventory management</li>
+<li>Expense tracking</li>
+<li>Dashboard analytics</li>
+<li>Up to 50 products</li>
+</ul>
+</div>
 
-  <div class="pricing-card featured">
-    <div class="pricing-badge">Most Popular</div>
-    <div class="pricing-plan-name">Monthly</div>
-    <div class="pricing-price">₦1,500<span>/mo</span></div>
-    <div class="pricing-desc">Billed monthly. Cancel anytime.</div>
-    <ul class="pricing-features">
-      <li>Everything in Trial</li>
-      <li>Unlimited products</li>
-      <li>Business insights</li>
-      <li>Sales trend reports</li>
-      <li>Low stock alerts</li>
-    </ul>
-  </div>
+<div class="pricing-card featured">
+<div class="pricing-badge">Most Popular</div>
+<div class="pricing-plan-name">Monthly</div>
+<div class="pricing-price">₦1,500<span>/mo</span></div>
+<div class="pricing-desc">Billed monthly. Cancel anytime.</div>
+<ul class="pricing-features">
+<li>Everything in Trial</li>
+<li>Unlimited products</li>
+<li>Business insights</li>
+<li>Sales trend reports</li>
+<li>Low stock alerts</li>
+</ul>
+</div>
 
-  <div class="pricing-card">
-    <div class="pricing-badge" style="background:#00C896;color:#080B0F;">Save ₦3,000</div>
-    <div class="pricing-plan-name">Yearly</div>
-    <div class="pricing-price">₦15,000<span>/yr</span></div>
-    <div class="pricing-desc">₦1,250/month · 2 months free</div>
-    <ul class="pricing-features">
-      <li>Everything in Monthly</li>
-      <li>Best value plan</li>
-      <li>Priority activation</li>
-      <li>Full year coverage</li>
-      <li>2 months free</li>
-    </ul>
-  </div>
+<div class="pricing-card">
+<div class="pricing-badge" style="background:#00C896;color:#080B0F;">Save ₦3,000</div>
+<div class="pricing-plan-name">Yearly</div>
+<div class="pricing-price">₦15,000<span>/yr</span></div>
+<div class="pricing-desc">₦1,250/month · 2 months free</div>
+<ul class="pricing-features">
+<li>Everything in Monthly</li>
+<li>Best value plan</li>
+<li>Priority activation</li>
+<li>Full year coverage</li>
+<li>2 months free</li>
+</ul>
+</div>
 
 </div>
     """, unsafe_allow_html=True)
@@ -1575,7 +1575,7 @@ def page_forgot_password():
     inject_styles()
     st.markdown("""
 <div style="max-width:440px;margin:2.5rem auto;text-align:center;margin-bottom:1rem;">
-    <div style="font-size:2rem;font-weight:800;color:#0f172a;">📊 BizPulse</div>
+<div style="font-size:2rem;font-weight:800;color:#0f172a;">📊 BizPulse</div>
 </div>
     """, unsafe_allow_html=True)
 
@@ -1711,30 +1711,30 @@ def page_dashboard():
 
     st.markdown(f"""
 <div style="
-    background:linear-gradient(135deg,#0D1117 0%,#111827 100%);
-    border:1px solid #1F2D3D;border-radius:18px;
-    padding:1.75rem 2rem;margin-bottom:1.5rem;
-    position:relative;overflow:hidden;
+background:linear-gradient(135deg,#0D1117 0%,#111827 100%);
+border:1px solid #1F2D3D;border-radius:18px;
+padding:1.75rem 2rem;margin-bottom:1.5rem;
+position:relative;overflow:hidden;
 ">
-    <div style="
-        position:absolute;top:-40px;right:-40px;
-        width:200px;height:200px;border-radius:50%;
-        background:rgba(245,166,35,0.06);
-    "></div>
-    <div style="font-size:0.7rem;color:#4A6080;text-transform:uppercase;
-                letter-spacing:0.12em;font-weight:600;margin-bottom:0.4rem;
-                font-family:'DM Mono',monospace;">
-        {now.strftime("%A, %d %B %Y")}
-    </div>
-    <div style="
-        font-family:'Syne',sans-serif;
-        font-size:1.55rem;font-weight:800;color:#F0F4F8;
-        letter-spacing:-0.04em;margin-bottom:0.25rem;
-    ">{greeting}, {first_name} 👋</div>
-    <div style="font-size:0.875rem;color:#4A6080;">
-        Here's your business snapshot for
-        <strong style="color:#8BA0B8;">{user.get("business_name","your business")}</strong>
-    </div>
+<div style="
+position:absolute;top:-40px;right:-40px;
+width:200px;height:200px;border-radius:50%;
+background:rgba(245,166,35,0.06);
+"></div>
+<div style="font-size:0.7rem;color:#4A6080;text-transform:uppercase;
+letter-spacing:0.12em;font-weight:600;margin-bottom:0.4rem;
+font-family:'DM Mono',monospace;">
+{now.strftime("%A, %d %B %Y")}
+</div>
+<div style="
+font-family:'Syne',sans-serif;
+font-size:1.55rem;font-weight:800;color:#F0F4F8;
+letter-spacing:-0.04em;margin-bottom:0.25rem;
+">{greeting}, {first_name} 👋</div>
+<div style="font-size:0.875rem;color:#4A6080;">
+Here's your business snapshot for
+<strong style="color:#8BA0B8;">{user.get("business_name","your business")}</strong>
+</div>
 </div>
     """, unsafe_allow_html=True)
 
@@ -1972,25 +1972,25 @@ def page_record_sale():
 
             st.markdown(f"""
 <div class="kpi-card" style="margin-top:1rem;">
-    <div class="kpi-label">Sale Summary</div>
-    <div style="display:flex; gap:2rem; margin-top:0.5rem; flex-wrap:wrap;">
-        <div>
-            <div class="kpi-label">Unit Price</div>
-            <div style="font-weight:700;font-size:1.1rem;color:#f1f5f9">{fmt_naira(unit_price)}</div>
-        </div>
-        <div>
-            <div class="kpi-label">Quantity</div>
-            <div style="font-weight:700;font-size:1.1rem;color:#f1f5f9">{quantity}</div>
-        </div>
-        <div>
-            <div class="kpi-label">Total Amount</div>
-            <div style="font-weight:800;font-size:1.4rem;color:#34d399">{fmt_naira(total)}</div>
-        </div>
-        <div>
-            <div class="kpi-label">Gross Profit</div>
-            <div style="font-weight:700;font-size:1.1rem;color:#a5b4fc">{fmt_naira(gross_profit)}</div>
-        </div>
-    </div>
+<div class="kpi-label">Sale Summary</div>
+<div style="display:flex; gap:2rem; margin-top:0.5rem; flex-wrap:wrap;">
+<div>
+<div class="kpi-label">Unit Price</div>
+<div style="font-weight:700;font-size:1.1rem;color:#f1f5f9">{fmt_naira(unit_price)}</div>
+</div>
+<div>
+<div class="kpi-label">Quantity</div>
+<div style="font-weight:700;font-size:1.1rem;color:#f1f5f9">{quantity}</div>
+</div>
+<div>
+<div class="kpi-label">Total Amount</div>
+<div style="font-weight:800;font-size:1.4rem;color:#34d399">{fmt_naira(total)}</div>
+</div>
+<div>
+<div class="kpi-label">Gross Profit</div>
+<div style="font-weight:700;font-size:1.1rem;color:#a5b4fc">{fmt_naira(gross_profit)}</div>
+</div>
+</div>
 </div>
             """, unsafe_allow_html=True)
 
@@ -3221,20 +3221,20 @@ def render_sidebar():
         # ── Logo ──
         st.markdown("""
 <div style="padding:1.25rem 0.5rem 1.5rem 0.5rem;">
-    <div style="display:flex;align-items:center;gap:0.6rem;">
-        <div style="
-            width:32px;height:32px;border-radius:8px;
-            background:linear-gradient(135deg,#F5A623,#C4831A);
-            display:flex;align-items:center;justify-content:center;
-            font-size:0.95rem;flex-shrink:0;
-            box-shadow:0 3px 10px rgba(245,166,35,0.4);
-        ">📊</div>
-        <div style="
-            font-family:'Syne',sans-serif;
-            font-size:1.25rem;font-weight:800;
-            color:#F0F4F8;letter-spacing:-0.04em;
-        ">BizPulse</div>
-    </div>
+<div style="display:flex;align-items:center;gap:0.6rem;">
+<div style="
+width:32px;height:32px;border-radius:8px;
+background:linear-gradient(135deg,#F5A623,#C4831A);
+display:flex;align-items:center;justify-content:center;
+font-size:0.95rem;flex-shrink:0;
+box-shadow:0 3px 10px rgba(245,166,35,0.4);
+">📊</div>
+<div style="
+font-family:'Syne',sans-serif;
+font-size:1.25rem;font-weight:800;
+color:#F0F4F8;letter-spacing:-0.04em;
+">BizPulse</div>
+</div>
 </div>
         """, unsafe_allow_html=True)
 
@@ -3253,30 +3253,30 @@ def render_sidebar():
 
         st.markdown(f"""
 <div style="
-    background:#0D1117;border:1px solid #1F2D3D;
-    border-radius:12px;padding:0.875rem 1rem;
-    margin-bottom:1.5rem;
+background:#0D1117;border:1px solid #1F2D3D;
+border-radius:12px;padding:0.875rem 1rem;
+margin-bottom:1.5rem;
 ">
-    <div style="font-size:0.65rem;color:#4A6080;text-transform:uppercase;
-                letter-spacing:0.1em;font-weight:600;margin-bottom:0.3rem;">
-        Active Business
-    </div>
-    <div style="font-size:0.95rem;font-weight:700;
-                color:#F0F4F8;font-family:'Syne',sans-serif;
-                letter-spacing:-0.02em;margin-bottom:0.1rem;">
-        {user.get('business_name','—')}
-    </div>
-    <div style="font-size:0.75rem;color:#4A6080;margin-bottom:0.5rem;">
-        {user.get('full_name','')}
-    </div>
-    <div style="display:flex;align-items:center;gap:0.4rem;">
-        <div style="width:6px;height:6px;border-radius:50%;
-                    background:{status_color};flex-shrink:0;
-                    box-shadow:0 0 6px {status_color};"></div>
-        <div style="font-size:0.7rem;color:{status_color};font-weight:600;">
-            {plan_type.capitalize()} · {status_text}
-        </div>
-    </div>
+<div style="font-size:0.65rem;color:#4A6080;text-transform:uppercase;
+letter-spacing:0.1em;font-weight:600;margin-bottom:0.3rem;">
+Active Business
+</div>
+<div style="font-size:0.95rem;font-weight:700;
+color:#F0F4F8;font-family:'Syne',sans-serif;
+letter-spacing:-0.02em;margin-bottom:0.1rem;">
+{user.get('business_name','—')}
+</div>
+<div style="font-size:0.75rem;color:#4A6080;margin-bottom:0.5rem;">
+{user.get('full_name','')}
+</div>
+<div style="display:flex;align-items:center;gap:0.4rem;">
+<div style="width:6px;height:6px;border-radius:50%;
+background:{status_color};flex-shrink:0;
+box-shadow:0 0 6px {status_color};"></div>
+<div style="font-size:0.7rem;color:{status_color};font-weight:600;">
+{plan_type.capitalize()} · {status_text}
+</div>
+</div>
 </div>
         """, unsafe_allow_html=True)
 
@@ -3306,8 +3306,8 @@ def render_sidebar():
         # ── Bottom actions ──
         st.markdown("""
 <div style="position:fixed;bottom:0;left:0;width:260px;
-            padding:1rem;background:#080B0F;
-            border-top:1px solid #1F2D3D;">
+padding:1rem;background:#080B0F;
+border-top:1px solid #1F2D3D;">
 </div>
         """, unsafe_allow_html=True)
 
@@ -3348,33 +3348,33 @@ def check_access():
         email = user.get("email", "")
         st.markdown(f"""
 <div style="max-width:560px;margin:3rem auto;background:white;border-radius:20px;
-            padding:2.5rem;box-shadow:0 20px 60px rgba(0,0,0,0.08);
-            border:1px solid #e2e8f0;text-align:center;">
-    <div style="font-size:2.5rem;margin-bottom:0.5rem;">⏰</div>
-    <div style="font-size:1.4rem;font-weight:800;color:#0f172a;margin-bottom:0.5rem;">
-        Subscription Expired
-    </div>
-    <div style="color:#64748b;font-size:0.9rem;margin-bottom:2rem;">
-        Your access period has ended. Renew to continue using BizPulse.
-    </div>
-    <div style="background:#f8fafc;border-radius:14px;padding:1.25rem;
-                border:1px solid #e2e8f0;margin-bottom:1.75rem;text-align:left;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
-            <span style="font-weight:600;color:#334155;">Monthly</span>
-            <span style="font-weight:700;color:#0f172a;">
-                ₦{PAYMENT_DETAILS['monthly_price']:,}/month
-            </span>
-        </div>
-        <div style="display:flex;justify-content:space-between;">
-            <span style="font-weight:600;color:#334155;">Yearly</span>
-            <span style="font-weight:700;color:#10b981;">
-                ₦{PAYMENT_DETAILS['yearly_price']:,}/year — save ₦3,000
-            </span>
-        </div>
-    </div>
-    <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:1.5rem;">
-        🔒 Secure payment via Flutterwave. Reactivated within 24 hours.
-    </div>
+padding:2.5rem;box-shadow:0 20px 60px rgba(0,0,0,0.08);
+border:1px solid #e2e8f0;text-align:center;">
+<div style="font-size:2.5rem;margin-bottom:0.5rem;">⏰</div>
+<div style="font-size:1.4rem;font-weight:800;color:#0f172a;margin-bottom:0.5rem;">
+Subscription Expired
+</div>
+<div style="color:#64748b;font-size:0.9rem;margin-bottom:2rem;">
+Your access period has ended. Renew to continue using BizPulse.
+</div>
+<div style="background:#f8fafc;border-radius:14px;padding:1.25rem;
+border:1px solid #e2e8f0;margin-bottom:1.75rem;text-align:left;">
+<div style="display:flex;justify-content:space-between;margin-bottom:0.6rem;">
+<span style="font-weight:600;color:#334155;">Monthly</span>
+<span style="font-weight:700;color:#0f172a;">
+₦{PAYMENT_DETAILS['monthly_price']:,}/month
+</span>
+</div>
+<div style="display:flex;justify-content:space-between;">
+<span style="font-weight:600;color:#334155;">Yearly</span>
+<span style="font-weight:700;color:#10b981;">
+₦{PAYMENT_DETAILS['yearly_price']:,}/year — save ₦3,000
+</span>
+</div>
+</div>
+<div style="font-size:0.8rem;color:#94a3b8;margin-bottom:1.5rem;">
+🔒 Secure payment via Flutterwave. Reactivated within 24 hours.
+</div>
 </div>
         """, unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 2, 1])
