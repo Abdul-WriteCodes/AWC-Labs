@@ -89,48 +89,47 @@ def inject_styles():
     }
     #MainMenu, footer { visibility: hidden; }
 
-    /* ── Header: keep transparent but never hidden (toggle lives here) ── */
-    header,
-    [data-testid="stHeader"] {
-        visibility: visible !important;
+    /* Keep header visible — Streamlit needs it for layout */
+    header, [data-testid="stHeader"] {
         background: transparent !important;
-        pointer-events: none;           /* clicks pass through the empty header */
+        visibility: visible !important;
     }
-    /* Hide only the toolbar icons inside the header */
     header [data-testid="stToolbar"],
     [data-testid="stHeader"] [data-testid="stToolbar"] {
         visibility: hidden !important;
     }
 
-    /* ── Sidebar toggle — always visible, always clickable ── */
+    /* Show any native Streamlit toggle that exists */
     [data-testid="collapsedControl"],
-    [data-testid="stSidebarCollapsedControl"] {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        position: fixed !important;
-        top: 50vh !important;
-        left: 0 !important;
-        z-index: 99999 !important;
-        background: #111827 !important;
-        border: 1px solid #2D3F55 !important;
-        border-left: none !important;
-        border-radius: 0 10px 10px 0 !important;
-        padding: 0.5rem 0.35rem !important;
-        box-shadow: 4px 0 12px rgba(0,0,0,0.4) !important;
-        transition: background 0.15s, border-color 0.15s !important;
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="stSidebarToggle"] {
+        display:        flex   !important;
+        visibility:     visible !important;
+        opacity:        1      !important;
+        pointer-events: auto   !important;
     }
-    [data-testid="collapsedControl"]:hover,
-    [data-testid="stSidebarCollapsedControl"]:hover {
-        background: #1A2332 !important;
-        border-color: #F5A623 !important;
+
+    /* Custom sidebar tab injected by JS below */
+    #bpSidebarTab {
+        position: fixed;
+        top: 50vh;
+        left: 0;
+        transform: translateY(-50%);
+        z-index: 999999;
+        background: #111827;
+        border: 1px solid #2D3F55;
+        border-left: none;
+        border-radius: 0 10px 10px 0;
+        padding: 0.6rem 0.45rem;
+        cursor: pointer;
+        box-shadow: 4px 0 16px rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s, border-color 0.15s;
     }
-    [data-testid="collapsedControl"] svg,
-    [data-testid="stSidebarCollapsedControl"] svg {
-        color: #F5A623 !important;
-        fill: #F5A623 !important;
-    }
+    #bpSidebarTab:hover { background:#1A2332; border-color:#F5A623; }
+    #bpSidebarTab svg   { width:18px; height:18px; fill:#F5A623; }
     .block-container {
         padding-top: 1.5rem !important;
         padding-bottom: 3rem !important;
@@ -537,6 +536,77 @@ def inject_styles():
     }
 
     </style>
+    """, unsafe_allow_html=True)
+
+
+def inject_sidebar_toggle():
+    """
+    Injects a custom sidebar toggle tab via JavaScript.
+    Works by finding Streamlit's sidebar element and toggling its
+    collapsed state directly — no reliance on fragile data-testid selectors.
+    """
+    st.markdown("""
+    <script>
+    (function() {
+        // Only inject once
+        if (document.getElementById('bpSidebarTab')) return;
+
+        var tab = document.createElement('div');
+        tab.id = 'bpSidebarTab';
+        tab.title = 'Toggle sidebar';
+        tab.innerHTML = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
+
+        var collapsed = false;
+
+        function getSidebar() {
+            return document.querySelector('[data-testid="stSidebar"]');
+        }
+
+        function getToggleBtn() {
+            // Try every known Streamlit toggle testid
+            return (
+                document.querySelector('[data-testid="collapsedControl"] button') ||
+                document.querySelector('[data-testid="stSidebarCollapsedControl"] button') ||
+                document.querySelector('[data-testid="stSidebarToggle"]') ||
+                document.querySelector('button[aria-label="Close sidebar"]') ||
+                document.querySelector('button[aria-label="Open sidebar"]') ||
+                document.querySelector('button[aria-label="collapse sidebar"]') ||
+                document.querySelector('button[aria-label="expand sidebar"]')
+            );
+        }
+
+        tab.addEventListener('click', function() {
+            // Prefer clicking Streamlit's own button so state stays in sync
+            var btn = getToggleBtn();
+            if (btn) {
+                btn.click();
+            } else {
+                // Fallback: toggle sidebar visibility directly
+                var sb = getSidebar();
+                if (sb) {
+                    if (collapsed) {
+                        sb.style.display = '';
+                        tab.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
+                    } else {
+                        sb.style.display = 'none';
+                        tab.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
+                    }
+                    collapsed = !collapsed;
+                }
+            }
+        });
+
+        // Wait for DOM to be ready before appending
+        function mount() {
+            if (document.body) {
+                document.body.appendChild(tab);
+            } else {
+                setTimeout(mount, 100);
+            }
+        }
+        mount();
+    })();
+    </script>
     """, unsafe_allow_html=True)
 
 
@@ -3057,6 +3127,7 @@ def page_admin():
 # ─────────────────────────────────────────────
 
 def render_sidebar():
+    inject_sidebar_toggle()   # inject custom toggle tab on every logged-in render
     user     = st.session_state.get("user", {})
     is_admin = user.get("role") == "admin"
     current  = st.session_state.get("current_page", "dashboard")
