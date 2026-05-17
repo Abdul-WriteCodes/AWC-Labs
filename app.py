@@ -99,7 +99,7 @@ z-index:     999990  !important;
 backdrop-filter: blur(8px);
 border-bottom: 1px solid #1F2D3D;
 }
-/* Do NOT hide the toolbar — it contains the sidebar toggle button */
+/* Keep toolbar visible */
 header [data-testid="stToolbar"],
 [data-testid="stHeader"] [data-testid="stToolbar"] {
 visibility:  visible !important;
@@ -107,7 +107,7 @@ display:     flex    !important;
 opacity:     1       !important;
 }
 
-/* Ensure every possible Streamlit sidebar toggle selector is visible */
+/* Hide native Streamlit sidebar toggle — replaced by custom SVG button */
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="stSidebarToggle"],
@@ -116,10 +116,10 @@ button[aria-label="Open sidebar"],
 button[aria-label="Close sidebar"],
 button[aria-label="collapse sidebar"],
 button[aria-label="expand sidebar"] {
-display:        flex   !important;
-visibility:     visible !important;
-opacity:        1      !important;
-pointer-events: auto   !important;
+display:        none   !important;
+visibility:     hidden !important;
+opacity:        0      !important;
+pointer-events: none   !important;
 }
 
 /* Custom sidebar tab injected by JS below */
@@ -685,6 +685,7 @@ if (!svg) return;
 svg.setAttribute("points", state === "open" ? "15 18 9 12 15 6" : "9 18 15 12 9 6");
 }
 function clickNativeToggle() {
+// Temporarily un-hide, click, re-hide
 var selectors = [
 '[data-testid="collapsedControl"] button',
 '[data-testid="stSidebarCollapsedControl"]',
@@ -696,15 +697,22 @@ var selectors = [
 ];
 for (var i = 0; i < selectors.length; i++) {
 var el = document.querySelector(selectors[i]);
-if (el) { el.style.display = ""; el.click(); return; }
+if (el) {
+var prev = el.style.display;
+el.style.setProperty("display", "flex", "important");
+el.click();
+setTimeout(function() { el.style.setProperty("display", "none", "important"); }, 50);
+return;
+}
 }
 }
 tab.addEventListener("click", function() {
 clickNativeToggle();
-setTimeout(function() { updateIcon(getSidebarState()); }, 300);
+setTimeout(function() { updateIcon(getSidebarState()); }, 400);
 });
-// Sync icon on load
-setTimeout(function() { updateIcon(getSidebarState()); }, 800);
+// Sync icon on load and whenever sidebar state might change
+setTimeout(function() { updateIcon(getSidebarState()); }, 1000);
+setInterval(function() { updateIcon(getSidebarState()); }, 2000);
 })();
 </script>
     """, unsafe_allow_html=True)
