@@ -2104,6 +2104,10 @@ def page_sales_history():
 
     page_header("📋 Sales History", "View, edit or void past transactions")
 
+    # Force fresh fetch if a sale was just edited/voided
+    if st.session_state.get("sale_feedback"):
+        st.cache_data.clear()
+
     sales_df = get_sales_df(business_id)
     if sales_df.empty:
         st.info("📭 No sales recorded yet.")
@@ -2113,9 +2117,14 @@ def page_sales_history():
 
     # ── Filters ──
     fc1, fc2, fc3 = st.columns(3)
-    start_date = fc1.date_input("From", value=(datetime.now() - timedelta(days=30)).date(), key="sh_from")
-    end_date   = fc2.date_input("To",   value=datetime.now().date(), key="sh_to")
+    start_date  = fc1.date_input("From", value=(datetime.now() - timedelta(days=30)).date(), key="sh_from")
+    end_date    = fc2.date_input("To",   value=datetime.now().date(), key="sh_to")
     search_sale = fc3.text_input("🔍 Search product", key="sh_search", placeholder="Product name…")
+
+    # Safely parse sale_date — drop any rows where it couldn't be parsed
+    sales_df = sales_df.dropna(subset=["sale_date"])
+    sales_df["sale_date"] = pd.to_datetime(sales_df["sale_date"], errors="coerce", utc=True).dt.tz_localize(None)
+    sales_df = sales_df.dropna(subset=["sale_date"])
 
     filtered = sales_df[
         (sales_df["sale_date"].dt.date >= start_date) &
@@ -2150,14 +2159,24 @@ def page_sales_history():
     page_df = filtered.iloc[(sh_pg - 1) * SH_PAGE_SIZE: sh_pg * SH_PAGE_SIZE]
     st.caption(f"Showing {len(page_df)} of {len(filtered)} sales  •  Page {sh_pg} of {sh_total_pages}")
 
+    # ── Global feedback banner (outside expanders) ──
+    if "sale_feedback" in st.session_state:
+        msg = st.session_state.pop("sale_feedback")
+        if msg.startswith("✅"):
+            st.success(msg)
+        else:
+            st.error(msg)
+
     # ── Sale rows ──
     for _, r in page_df.iterrows():
         sale_id  = r["sale_id"]
         sale_dt  = r["sale_date"].strftime("%d %b %Y %H:%M") if pd.notna(r["sale_date"]) else "—"
+        # Keep expander open if this sale was just edited
+        is_expanded = st.session_state.get("last_edited_sale") == sale_id
         with st.expander(
             f"**{r['product_name']}** × {int(r['quantity'])}  |  "
             f"{fmt_naira(r['total_amount'])}  |  {r['payment_method']}  |  {sale_dt}",
-            expanded=False
+            expanded=is_expanded
         ):
             # ── Edit form ──
             with st.form(f"edit_sale_{sale_id}"):
@@ -2242,7 +2261,7 @@ def page_sales_history():
                     "cost_total":     new_cost_t,
                     "gross_profit":   new_profit,
                     "payment_method": new_payment,
-                    "sale_date":      str(new_date),
+                    "sale_date":      datetime.combine(new_date, datetime.now().time()).isoformat(),
                 })
 
                 if ok:
@@ -2268,20 +2287,13 @@ def page_sales_history():
                                 db_update(TBL_PRODUCTS, "product_id", new_product_id, {"stock_quantity": max(0, adjusted)})
 
                     st.cache_data.clear()
-                    st.session_state[f"sale_msg_{sale_id}"] = "✅ Sale updated and inventory reconciled."
+                    st.session_state["sale_feedback"]   = "✅ Sale updated and inventory reconciled."
+                    st.session_state["last_edited_sale"] = sale_id
                     st.rerun()
                 else:
-                    st.session_state[f"sale_msg_{sale_id}"] = "❌ Failed to update sale. Please try again."
+                    st.session_state["sale_feedback"]   = "❌ Failed to update sale. Please try again."
+                    st.session_state["last_edited_sale"] = sale_id
                     st.rerun()
-
-            # Show persistent feedback message
-            msg_key = f"sale_msg_{sale_id}"
-            if msg_key in st.session_state:
-                msg = st.session_state.pop(msg_key)
-                if msg.startswith("✅"):
-                    st.success(msg)
-                else:
-                    st.error(msg)
 
             # ── Delete / Void ──
             confirm_void_key = f"confirm_void_{sale_id}"
@@ -2311,22 +2323,14 @@ def page_sales_history():
                                 db_update(TBL_PRODUCTS, "product_id", prod_live.iloc[0]["product_id"], {"stock_quantity": restored})
                         st.cache_data.clear()
                         st.session_state.pop(confirm_void_key, None)
-                        st.session_state[f"void_msg_{sale_id}"] = f"✅ Sale voided. {int(r['quantity'])} units restored to stock."
+                        st.session_state["sale_feedback"] = f"✅ Sale voided. {int(r['quantity'])} units restored to stock."
                         st.rerun()
                     else:
-                        st.session_state[f"void_msg_{sale_id}"] = "❌ Failed to void sale. Please try again."
+                        st.session_state["sale_feedback"] = "❌ Failed to void sale. Please try again."
                         st.rerun()
                 if vd2.button("❌ Cancel", key=f"no_void_{sale_id}"):
                     st.session_state.pop(confirm_void_key, None)
                     st.rerun()
-
-            void_msg_key = f"void_msg_{sale_id}"
-            if void_msg_key in st.session_state:
-                msg = st.session_state.pop(void_msg_key)
-                if msg.startswith("✅"):
-                    st.success(msg)
-                else:
-                    st.error(msg)
 
     # ── Pagination controls ──
     if sh_total_pages > 1:
