@@ -2184,37 +2184,55 @@ def page_sales_history():
                 save_sale = st.form_submit_button("💾 Save Changes", type="primary")
 
             if save_sale:
-                # Recalculate with new product and qty
+                # Resolve new product details
                 if not products_df.empty:
                     prod_row = products_df[products_df["product_name"] == new_product_name]
                     if not prod_row.empty:
-                        new_unit_price   = safe_float(prod_row.iloc[0]["selling_price"])
-                        new_cost_price   = safe_float(prod_row.iloc[0]["cost_price"])
-                        new_product_id   = prod_row.iloc[0]["product_id"]
+                        new_unit_price = safe_float(prod_row.iloc[0]["selling_price"])
+                        new_cost_price = safe_float(prod_row.iloc[0]["cost_price"])
+                        new_product_id = prod_row.iloc[0]["product_id"]
                     else:
-                        new_unit_price   = safe_float(r["unit_price"])
-                        new_cost_price   = new_unit_price
-                        new_product_id   = r.get("product_id", "")
+                        new_unit_price = safe_float(r["unit_price"])
+                        new_cost_price = new_unit_price
+                        new_product_id = r.get("product_id", "")
                 else:
                     new_unit_price = safe_float(r["unit_price"])
                     new_cost_price = new_unit_price
                     new_product_id = r.get("product_id", "")
 
-                new_total   = new_unit_price * new_qty
-                new_cost_t  = new_cost_price * new_qty
-                new_profit  = new_total - new_cost_t
-                old_qty     = int(r["quantity"])
-                qty_delta   = new_qty - old_qty  # positive = need more stock deducted
+                old_qty        = int(r["quantity"])
+                old_product_id = r.get("product_id", "")
+                product_changed = (new_product_id != old_product_id)
 
-                # Check stock availability for the quantity delta
-                if not products_df.empty and qty_delta > 0:
-                    fresh_prod = products_df[products_df["product_id"] == new_product_id]
-                    if not fresh_prod.empty:
-                        avail = int(fresh_prod.iloc[0]["stock_quantity"])
-                        if qty_delta > avail:
-                            st.error(f"Not enough stock. Only {avail} units available to add.")
-                            st.stop()
+                new_total  = new_unit_price * new_qty
+                new_cost_t = new_cost_price * new_qty
+                new_profit = new_total - new_cost_t
 
+                # ── Fetch LIVE stock before any check or update ──
+                live_products = get_products_df(business_id)
+
+                # If product changed: fully restore old product stock, fully deduct new
+                if product_changed:
+                    # Check new product has enough stock
+                    if not live_products.empty:
+                        new_prod_live = live_products[live_products["product_id"] == new_product_id]
+                        if not new_prod_live.empty:
+                            avail = int(new_prod_live.iloc[0]["stock_quantity"])
+                            if new_qty > avail:
+                                st.error(f"Not enough stock for {new_product_name}. Only {avail} units available.")
+                                st.stop()
+                else:
+                    # Same product — only check the extra qty needed
+                    qty_delta = new_qty - old_qty
+                    if qty_delta > 0 and not live_products.empty:
+                        same_prod_live = live_products[live_products["product_id"] == new_product_id]
+                        if not same_prod_live.empty:
+                            avail = int(same_prod_live.iloc[0]["stock_quantity"])
+                            if qty_delta > avail:
+                                st.error(f"Not enough stock. Only {avail} extra units available.")
+                                st.stop()
+
+                # ── Update the sale record ──
                 ok = db_update(TBL_SALES, "sale_id", sale_id, {
                     "product_id":     new_product_id,
                     "product_name":   new_product_name,
@@ -2226,19 +2244,44 @@ def page_sales_history():
                     "payment_method": new_payment,
                     "sale_date":      str(new_date),
                 })
+
                 if ok:
-                    # Reconcile stock: reverse old qty, apply new qty
-                    if not products_df.empty and new_product_id:
-                        prod_row_fresh = products_df[products_df["product_id"] == new_product_id]
-                        if not prod_row_fresh.empty:
-                            current_stock = int(prod_row_fresh.iloc[0]["stock_quantity"])
-                            adjusted_stock = current_stock - qty_delta
-                            db_update(TBL_PRODUCTS, "product_id", new_product_id, {"stock_quantity": max(0, adjusted_stock)})
+                    # ── Reconcile stock using LIVE values ──
+                    if not live_products.empty:
+                        if product_changed:
+                            # Restore full old_qty to old product
+                            old_prod_live = live_products[live_products["product_id"] == old_product_id]
+                            if not old_prod_live.empty:
+                                restored = int(old_prod_live.iloc[0]["stock_quantity"]) + old_qty
+                                db_update(TBL_PRODUCTS, "product_id", old_product_id, {"stock_quantity": restored})
+                            # Deduct full new_qty from new product
+                            new_prod_live = live_products[live_products["product_id"] == new_product_id]
+                            if not new_prod_live.empty:
+                                deducted = int(new_prod_live.iloc[0]["stock_quantity"]) - new_qty
+                                db_update(TBL_PRODUCTS, "product_id", new_product_id, {"stock_quantity": max(0, deducted)})
+                        else:
+                            # Same product — apply qty delta only
+                            qty_delta = new_qty - old_qty
+                            same_prod_live = live_products[live_products["product_id"] == new_product_id]
+                            if not same_prod_live.empty:
+                                adjusted = int(same_prod_live.iloc[0]["stock_quantity"]) - qty_delta
+                                db_update(TBL_PRODUCTS, "product_id", new_product_id, {"stock_quantity": max(0, adjusted)})
+
                     st.cache_data.clear()
-                    st.success("✅ Sale updated and inventory reconciled.")
+                    st.session_state[f"sale_msg_{sale_id}"] = "✅ Sale updated and inventory reconciled."
                     st.rerun()
                 else:
-                    st.error("Failed to update sale.")
+                    st.session_state[f"sale_msg_{sale_id}"] = "❌ Failed to update sale. Please try again."
+                    st.rerun()
+
+            # Show persistent feedback message
+            msg_key = f"sale_msg_{sale_id}"
+            if msg_key in st.session_state:
+                msg = st.session_state.pop(msg_key)
+                if msg.startswith("✅"):
+                    st.success(msg)
+                else:
+                    st.error(msg)
 
             # ── Delete / Void ──
             confirm_void_key = f"confirm_void_{sale_id}"
@@ -2256,21 +2299,34 @@ def page_sales_history():
                 if vd1.button("✅ Yes, void sale", key=f"yes_void_{sale_id}", type="primary"):
                     ok = db_delete(TBL_SALES, "sale_id", sale_id)
                     if ok:
-                        # Restore stock
-                        if not products_df.empty:
-                            prod_row = products_df[products_df["product_name"] == r["product_name"]]
-                            if not prod_row.empty:
-                                restored = int(prod_row.iloc[0]["stock_quantity"]) + int(r["quantity"])
-                                db_update(TBL_PRODUCTS, "product_id", prod_row.iloc[0]["product_id"], {"stock_quantity": restored})
+                        # Fetch LIVE stock before restoring
+                        live_products = get_products_df(business_id)
+                        if not live_products.empty:
+                            prod_live = live_products[live_products["product_id"] == r.get("product_id", "")]
+                            if prod_live.empty:
+                                # fallback: match by name
+                                prod_live = live_products[live_products["product_name"] == r["product_name"]]
+                            if not prod_live.empty:
+                                restored = int(prod_live.iloc[0]["stock_quantity"]) + int(r["quantity"])
+                                db_update(TBL_PRODUCTS, "product_id", prod_live.iloc[0]["product_id"], {"stock_quantity": restored})
                         st.cache_data.clear()
                         st.session_state.pop(confirm_void_key, None)
-                        st.success("✅ Sale voided and stock restored.")
+                        st.session_state[f"void_msg_{sale_id}"] = f"✅ Sale voided. {int(r['quantity'])} units restored to stock."
                         st.rerun()
                     else:
-                        st.error("Failed to delete sale.")
+                        st.session_state[f"void_msg_{sale_id}"] = "❌ Failed to void sale. Please try again."
+                        st.rerun()
                 if vd2.button("❌ Cancel", key=f"no_void_{sale_id}"):
                     st.session_state.pop(confirm_void_key, None)
                     st.rerun()
+
+            void_msg_key = f"void_msg_{sale_id}"
+            if void_msg_key in st.session_state:
+                msg = st.session_state.pop(void_msg_key)
+                if msg.startswith("✅"):
+                    st.success(msg)
+                else:
+                    st.error(msg)
 
     # ── Pagination controls ──
     if sh_total_pages > 1:
@@ -2397,12 +2453,24 @@ def page_products():
                         c_yes, c_no = st.columns(2)
                         if c_yes.button("✅ Yes, delete", key=f"yes_del_{row['product_id']}", type="primary"):
                             ok = db_delete(TBL_PRODUCTS, "product_id", row["product_id"])
+                            st.cache_data.clear()
                             st.session_state.pop(confirm_key, None)
-                            st.success("Product deleted.") if ok else st.error("Delete failed.")
+                            st.session_state["prod_del_msg"] = (
+                                f"✅ {row['product_name']} deleted successfully."
+                                if ok else "❌ Failed to delete product. Please try again."
+                            )
                             st.rerun()
                         if c_no.button("❌ Cancel", key=f"no_del_{row['product_id']}"):
                             st.session_state.pop(confirm_key, None)
                             st.rerun()
+
+            # Show product delete feedback
+            if "prod_del_msg" in st.session_state:
+                msg = st.session_state.pop("prod_del_msg")
+                if msg.startswith("✅"):
+                    st.success(msg)
+                else:
+                    st.error(msg)
 
             # Pagination controls
             if total_pages > 1:
@@ -2641,8 +2709,21 @@ def page_expenses():
                                 "amount":       new_exp_amt,
                                 "expense_date": str(new_exp_date),
                             })
-                            st.success("Expense updated!") if ok else st.error("Update failed.")
+                            st.cache_data.clear()
+                            st.session_state[f"exp_msg_{exp_id}"] = (
+                                "✅ Expense updated successfully."
+                                if ok else "❌ Failed to update expense. Please try again."
+                            )
                             st.rerun()
+
+                        # Show feedback message
+                        exp_msg_key = f"exp_msg_{exp_id}"
+                        if exp_msg_key in st.session_state:
+                            msg = st.session_state.pop(exp_msg_key)
+                            if msg.startswith("✅"):
+                                st.success(msg)
+                            else:
+                                st.error(msg)
 
                         # Delete with confirmation
                         confirm_exp_key = f"confirm_del_exp_{exp_id}"
@@ -2654,12 +2735,23 @@ def page_expenses():
                             st.warning("⚠️ Delete this expense entry permanently?")
                             ce1, ce2 = st.columns(2)
                             if ce1.button("✅ Yes, delete", key=f"yes_del_exp_{exp_id}", type="primary"):
-                                db_delete(TBL_EXPENSES, "expense_id", exp_id)
+                                ok = db_delete(TBL_EXPENSES, "expense_id", exp_id)
+                                st.cache_data.clear()
                                 st.session_state.pop(confirm_exp_key, None)
+                                st.session_state["exp_del_msg"] = (
+                                    "✅ Expense deleted." if ok else "❌ Failed to delete expense."
+                                )
                                 st.rerun()
                             if ce2.button("❌ Cancel", key=f"no_del_exp_{exp_id}"):
                                 st.session_state.pop(confirm_exp_key, None)
                                 st.rerun()
+
+                        if "exp_del_msg" in st.session_state:
+                            msg = st.session_state.pop("exp_del_msg")
+                            if msg.startswith("✅"):
+                                st.success(msg)
+                            else:
+                                st.error(msg)
 
                 # Pagination controls
                 if exp_total_pages > 1:
