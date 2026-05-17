@@ -1778,28 +1778,67 @@ Here's your business snapshot for
             section_header("Revenue Trend — Last 30 Days")
             trend_df = sales_df.copy()
             trend_df["date"] = trend_df["sale_date"].dt.date
-            trend_df = (
-                trend_df[trend_df["sale_date"] >= (datetime.now() - timedelta(days=30))]
-                .groupby("date")["total_amount"].sum()
+            # Fill every day in the last 30 days so missing days show as 0
+            last30 = trend_df[trend_df["sale_date"] >= (datetime.now() - timedelta(days=30))]
+            daily = last30.groupby("date")["total_amount"].sum().reset_index()
+            all_dates = pd.date_range(
+                end=datetime.now().date(),
+                periods=30, freq="D"
+            ).date
+            daily = (
+                daily.set_index("date")
+                .reindex(all_dates, fill_value=0)
                 .reset_index()
+                .rename(columns={"index": "date"})
             )
-            if not trend_df.empty:
-                fig = px.area(
-                    trend_df, x="date", y="total_amount",
-                    labels={"total_amount": "Revenue (₦)", "date": ""},
-                    color_discrete_sequence=["#6366f1"],
+            daily["date_str"] = pd.to_datetime(daily["date"]).dt.strftime("%d %b")
+            if not daily.empty:
+                avg_rev = daily["total_amount"].mean()
+                fig = go.Figure()
+                # Bar for each day
+                fig.add_trace(go.Bar(
+                    x=daily["date_str"],
+                    y=daily["total_amount"],
+                    marker_color=[
+                        "#F5A623" if v >= avg_rev else "#6366f1"
+                        for v in daily["total_amount"]
+                    ],
+                    hovertemplate="%{x}<br>₦%{y:,.0f}<extra></extra>",
+                ))
+                # Average line
+                fig.add_hline(
+                    y=avg_rev,
+                    line_dash="dot",
+                    line_color="#00C896",
+                    line_width=1.5,
+                    annotation_text=f"Avg ₦{avg_rev:,.0f}",
+                    annotation_position="top right",
+                    annotation_font_size=11,
+                    annotation_font_color="#00C896",
                 )
                 fig.update_layout(
-                    margin=dict(l=0, r=0, t=10, b=0),
+                    margin=dict(l=0, r=0, t=20, b=0),
                     plot_bgcolor="rgba(0,0,0,0)",
                     paper_bgcolor="rgba(0,0,0,0)",
-                    yaxis=dict(tickprefix="₦", gridcolor="#f1f5f9"),
-                    xaxis=dict(gridcolor="#f1f5f9"),
-                    height=280,
+                    yaxis=dict(
+                        tickprefix="₦",
+                        gridcolor="rgba(255,255,255,0.06)",
+                        tickfont=dict(size=11),
+                        tickformat=",.0f",
+                    ),
+                    xaxis=dict(
+                        type="category",
+                        tickangle=-45,
+                        tickfont=dict(size=10),
+                        gridcolor="rgba(0,0,0,0)",
+                        nticks=10,
+                    ),
+                    height=240,
+                    bargap=0.25,
+                    showlegend=False,
                 )
-                fig.update_traces(fill="tozeroy", line_color="#6366f1",
-                                  fillcolor="rgba(99,102,241,0.15)")
                 st.plotly_chart(fig, use_container_width=True)
+                st.caption("■ Gold bars = above average days  ■ Purple = below average")
 
         with col_right:
             section_header("Sales by Payment Method")
