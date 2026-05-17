@@ -1109,177 +1109,26 @@ def stock_pill(qty, reorder):
 def page_login():
     inject_styles()
 
-    # ── Two-column layout: value prop left, form right ──
-    left, right = st.columns([1.15, 1])
+    # ── Single-column centred layout ──
+    _, mid, _ = st.columns([1, 2, 1])
 
-    with left:
-        st.markdown("""
-        <div style="padding:1rem 0.5rem 1rem 0;">
+    with mid:
+        # Logo + brand
+        st.markdown(
+            "<div style='text-align:center;margin-bottom:0.25rem;"
+            "font-family:Syne,sans-serif;font-size:2rem;font-weight:800;"
+            "color:#F0F4F8;letter-spacing:-0.05em;'>📊 BizPulse</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<div style='text-align:center;font-size:0.85rem;"
+            "color:#4A6080;margin-bottom:1.5rem;'>"
+            "Sales · Inventory · Profit analytics — built for Nigerian SMEs"
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
-            <!-- Logo -->
-            <div style="display:flex;align-items:center;gap:0.65rem;margin-bottom:1.75rem;">
-                <div style="
-                    width:40px;height:40px;border-radius:11px;
-                    background:linear-gradient(135deg,#F5A623,#C4831A);
-                    display:flex;align-items:center;justify-content:center;
-                    font-size:1.15rem;flex-shrink:0;
-                    box-shadow:0 4px 18px rgba(245,166,35,0.4);
-                ">📊</div>
-                <div style="
-                    font-family:'Syne',sans-serif;
-                    font-size:1.75rem;font-weight:800;
-                    color:#F0F4F8;letter-spacing:-0.05em;
-                ">BizPulse</div>
-            </div>
-
-            <!-- Headline -->
-            <div style="
-                font-family:'Syne',sans-serif;
-                font-size:1.9rem;font-weight:800;
-                color:#F0F4F8;letter-spacing:-0.04em;
-                line-height:1.1;margin-bottom:0.75rem;
-            ">
-                Your business,<br>
-                <span style="color:#F5A623;">finally in focus.</span>
-            </div>
-
-            <!-- Sub-headline -->
-            <div style="
-                font-size:0.88rem;color:#4A6080;
-                line-height:1.65;margin-bottom:1.5rem;
-            ">
-                Nigerian SMEs using BizPulse know their exact profit,
-                catch low stock before it hurts sales, and make
-                smarter decisions — every single day.
-            </div>
-
-            <!-- Stats: 2x2 grid using table layout for reliability -->
-            <table style="width:100%;border-collapse:separate;border-spacing:8px;margin:-8px;margin-bottom:0.75rem;">
-                <tr>
-                    <td style="
-                        background:#0D1117;border:1px solid #1F2D3D;
-                        border-radius:12px;padding:0.875rem 0.5rem;
-                        text-align:center;width:25%;
-                    ">
-                        <div style="font-family:'DM Mono',monospace;font-size:1.3rem;
-                                    font-weight:700;color:#F5A623;line-height:1;">₦0</div>
-                        <div style="font-size:0.65rem;color:#4A6080;text-transform:uppercase;
-                                    letter-spacing:0.05em;margin-top:0.25rem;line-height:1.3;">
-                            To start<br>14 days free
-                        </div>
-                    </td>
-                    <td style="
-                        background:#0D1117;border:1px solid #1F2D3D;
-                        border-radius:12px;padding:0.875rem 0.5rem;
-                        text-align:center;width:25%;
-                    ">
-                        <div style="font-family:'DM Mono',monospace;font-size:1.3rem;
-                                    font-weight:700;color:#F5A623;line-height:1;">60s</div>
-                        <div style="font-size:0.65rem;color:#4A6080;text-transform:uppercase;
-                                    letter-spacing:0.05em;margin-top:0.25rem;line-height:1.3;">
-                            To record<br>a sale
-                        </div>
-                    </td>
-                    <td style="
-                        background:#0D1117;border:1px solid #1F2D3D;
-                        border-radius:12px;padding:0.875rem 0.5rem;
-                        text-align:center;width:25%;
-                    ">
-                        <div style="font-family:'DM Mono',monospace;font-size:1.3rem;
-                                    font-weight:700;color:#F5A623;line-height:1;">100%</div>
-                        <div style="font-size:0.65rem;color:#4A6080;text-transform:uppercase;
-                                    letter-spacing:0.05em;margin-top:0.25rem;line-height:1.3;">
-                            Your data<br>yours only
-                        </div>
-                    </td>
-                    <td style="
-                        background:#0D1117;border:1px solid #1F2D3D;
-                        border-radius:12px;padding:0.875rem 0.5rem;
-                        text-align:center;width:25%;
-                    ">
-                        <div style="font-family:'DM Mono',monospace;font-size:1.3rem;
-                                    font-weight:700;color:#F5A623;line-height:1;">24/7</div>
-                        <div style="font-size:0.65rem;color:#4A6080;text-transform:uppercase;
-                                    letter-spacing:0.05em;margin-top:0.25rem;line-height:1.3;">
-                            Access any<br>device
-                        </div>
-                    </td>
-                </tr>
-            </table>
-
-            <!-- Feature pills row -->
-            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin:1rem 0;">
-                <div style="display:inline-flex;align-items:center;gap:0.35rem;
-                            background:#0D1117;border:1px solid #1F2D3D;
-                            border-radius:99px;padding:0.3rem 0.7rem;
-                            font-size:0.73rem;color:#8BA0B8;">
-                    <span style="color:#F5A623;font-size:0.6rem;">●</span> Sales tracking
-                </div>
-                <div style="display:inline-flex;align-items:center;gap:0.35rem;
-                            background:#0D1117;border:1px solid #1F2D3D;
-                            border-radius:99px;padding:0.3rem 0.7rem;
-                            font-size:0.73rem;color:#8BA0B8;">
-                    <span style="color:#F5A623;font-size:0.6rem;">●</span> Inventory alerts
-                </div>
-                <div style="display:inline-flex;align-items:center;gap:0.35rem;
-                            background:#0D1117;border:1px solid #1F2D3D;
-                            border-radius:99px;padding:0.3rem 0.7rem;
-                            font-size:0.73rem;color:#8BA0B8;">
-                    <span style="color:#F5A623;font-size:0.6rem;">●</span> Profit analytics
-                </div>
-                <div style="display:inline-flex;align-items:center;gap:0.35rem;
-                            background:#0D1117;border:1px solid #1F2D3D;
-                            border-radius:99px;padding:0.3rem 0.7rem;
-                            font-size:0.73rem;color:#8BA0B8;">
-                    <span style="color:#F5A623;font-size:0.6rem;">●</span> Expense control
-                </div>
-            </div>
-
-            <!-- Testimonial -->
-            <div style="
-                background:#0D1117;border:1px solid #1F2D3D;
-                border-left:3px solid #F5A623;
-                border-radius:0 12px 12px 0;
-                padding:0.875rem 1rem;
-            ">
-                <div style="font-size:0.82rem;color:#8BA0B8;
-                            line-height:1.6;font-style:italic;
-                            margin-bottom:0.4rem;">
-                    "I used to guess my profit every month.
-                    Now I know exactly where every naira goes."
-                </div>
-                <div style="font-size:0.7rem;color:#4A6080;font-weight:600;">
-                    — Small business owner, Lagos
-                </div>
-            </div>
-
-        </div>
-        """, unsafe_allow_html=True)
-
-    with right:
-        # ── Card wrapper: fully self-contained, no unclosed tags ──
-        # Streamlit renders each st.markdown call in isolation; any div opened
-        # here MUST be closed in the same call, otherwise the browser receives
-        # broken HTML which makes Streamlit fall back to showing raw source.
-        st.markdown("""
-        <div style="
-            background:#111827;border:1px solid #2D3F55;
-            border-radius:20px;padding:1.75rem 1.5rem 0.25rem 1.5rem;
-            box-shadow:0 32px 80px rgba(0,0,0,0.7);
-            margin-top:1rem;
-        ">
-            <div style="
-                font-family:'Syne',sans-serif;
-                font-size:1.3rem;font-weight:700;
-                color:#F0F4F8;letter-spacing:-0.03em;
-                margin-bottom:0.2rem;
-            ">Welcome back</div>
-            <div style="font-size:0.82rem;color:#4A6080;margin-bottom:0.1rem;">
-                Sign in to your business dashboard
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
+        # Login form
         with st.form("login_form"):
             email    = st.text_input("Email address", placeholder="you@business.com")
             password = st.text_input("Password", type="password", placeholder="••••••••")
@@ -1316,15 +1165,14 @@ def page_login():
                 st.session_state.current_page = "signup"
                 st.rerun()
 
-        # Self-contained footer block — no open tags
-        st.markdown("""
-        <div style="margin-top:1rem;padding-top:0.875rem;
-                    border-top:1px solid #1F2D3D;text-align:center;">
-            <div style="font-size:0.7rem;color:#4A6080;">
-                🔒 256-bit encrypted · Your data is never shared
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            "<div style='margin-top:1rem;padding-top:0.875rem;"
+            "border-top:1px solid #1F2D3D;text-align:center;"
+            "font-size:0.7rem;color:#4A6080;'>"
+            "🔒 256-bit encrypted · Your data is never shared"
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
 
 # ─────────────────────────────────────────────
@@ -1337,7 +1185,6 @@ def page_signup():
     # ── Hero ──
     st.markdown("""
     <div style="text-align:center;padding:2.5rem 1rem 0.5rem 1rem;">
-        <!-- Logo mark -->
         <div style="display:inline-flex;align-items:center;gap:0.7rem;margin-bottom:1.25rem;">
             <div style="
                 width:48px;height:48px;border-radius:14px;
@@ -1368,7 +1215,6 @@ def page_signup():
             Sales tracking · Inventory management · Expense control ·
             Profit analytics — built for Nigerian SMEs.
         </div>
-        <!-- Social proof -->
         <div style="
             display:inline-flex;align-items:center;gap:0.5rem;
             margin-top:1.25rem;
@@ -1385,8 +1231,6 @@ def page_signup():
     # ── Pricing Cards ──
     st.markdown("""
     <div class="pricing-grid">
-
-      <!-- Free Trial -->
       <div class="pricing-card">
         <div class="pricing-plan-name">Free Trial</div>
         <div class="pricing-price">₦0<span>/14 days</span></div>
@@ -1400,7 +1244,6 @@ def page_signup():
         </ul>
       </div>
 
-      <!-- Monthly — Featured -->
       <div class="pricing-card featured">
         <div class="pricing-badge">Most Popular</div>
         <div class="pricing-plan-name">Monthly</div>
@@ -1415,7 +1258,6 @@ def page_signup():
         </ul>
       </div>
 
-      <!-- Yearly -->
       <div class="pricing-card">
         <div class="pricing-badge" style="background:#00C896;color:#080B0F;">Save ₦3,000</div>
         <div class="pricing-plan-name">Yearly</div>
