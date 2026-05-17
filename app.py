@@ -89,20 +89,33 @@ def inject_styles():
     }
     #MainMenu, footer { visibility: hidden; }
 
-    /* Keep header visible — Streamlit needs it for layout */
+    /* Keep header and ALL its children fully visible — sidebar toggle lives here */
     header, [data-testid="stHeader"] {
-        background: transparent !important;
-        visibility: visible !important;
+        background:  rgba(8,11,15,0.95) !important;
+        visibility:  visible !important;
+        display:     flex    !important;
+        opacity:     1       !important;
+        z-index:     999990  !important;
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid #1F2D3D;
     }
+    /* Do NOT hide the toolbar — it contains the sidebar toggle button */
     header [data-testid="stToolbar"],
     [data-testid="stHeader"] [data-testid="stToolbar"] {
-        visibility: hidden !important;
+        visibility:  visible !important;
+        display:     flex    !important;
+        opacity:     1       !important;
     }
 
-    /* Show any native Streamlit toggle that exists */
+    /* Ensure every possible Streamlit sidebar toggle selector is visible */
     [data-testid="collapsedControl"],
     [data-testid="stSidebarCollapsedControl"],
-    [data-testid="stSidebarToggle"] {
+    [data-testid="stSidebarToggle"],
+    [data-testid="stSidebarToggleButton"],
+    button[aria-label="Open sidebar"],
+    button[aria-label="Close sidebar"],
+    button[aria-label="collapse sidebar"],
+    button[aria-label="expand sidebar"] {
         display:        flex   !important;
         visibility:     visible !important;
         opacity:        1      !important;
@@ -541,70 +554,40 @@ def inject_styles():
 
 def inject_sidebar_toggle():
     """
-    Injects a custom sidebar toggle tab via JavaScript.
-    Works by finding Streamlit's sidebar element and toggling its
-    collapsed state directly — no reliance on fragile data-testid selectors.
+    Forces Streamlit's native sidebar toggle to remain visible and functional.
+    We do NOT inject a competing custom button — the native toggle is already
+    restored via CSS. This function is kept for backward compatibility.
     """
     st.markdown("""
     <script>
     (function() {
-        // Only inject once
-        if (document.getElementById('bpSidebarTab')) return;
-
-        var tab = document.createElement('div');
-        tab.id = 'bpSidebarTab';
-        tab.title = 'Toggle sidebar';
-        tab.innerHTML = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
-
-        var collapsed = false;
-
-        function getSidebar() {
-            return document.querySelector('[data-testid="stSidebar"]');
-        }
-
-        function getToggleBtn() {
-            // Try every known Streamlit toggle testid
-            return (
-                document.querySelector('[data-testid="collapsedControl"] button') ||
-                document.querySelector('[data-testid="stSidebarCollapsedControl"] button') ||
-                document.querySelector('[data-testid="stSidebarToggle"]') ||
-                document.querySelector('button[aria-label="Close sidebar"]') ||
-                document.querySelector('button[aria-label="Open sidebar"]') ||
-                document.querySelector('button[aria-label="collapse sidebar"]') ||
-                document.querySelector('button[aria-label="expand sidebar"]')
-            );
-        }
-
-        tab.addEventListener('click', function() {
-            // Prefer clicking Streamlit's own button so state stays in sync
-            var btn = getToggleBtn();
-            if (btn) {
-                btn.click();
-            } else {
-                // Fallback: toggle sidebar visibility directly
-                var sb = getSidebar();
-                if (sb) {
-                    if (collapsed) {
-                        sb.style.display = '';
-                        tab.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
-                    } else {
-                        sb.style.display = 'none';
-                        tab.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
-                    }
-                    collapsed = !collapsed;
+        // Ensure Streamlit's own sidebar toggle button stays visible.
+        // We find it by every known selector and force visibility.
+        function ensureToggleVisible() {
+            var selectors = [
+                '[data-testid="collapsedControl"]',
+                '[data-testid="stSidebarCollapsedControl"]',
+                '[data-testid="stSidebarToggle"]',
+                '[data-testid="stSidebarToggleButton"]',
+                'button[aria-label="Open sidebar"]',
+                'button[aria-label="Close sidebar"]',
+                'button[aria-label="collapse sidebar"]',
+                'button[aria-label="expand sidebar"]'
+            ];
+            selectors.forEach(function(sel) {
+                var el = document.querySelector(sel);
+                if (el) {
+                    el.style.display    = '';
+                    el.style.visibility = 'visible';
+                    el.style.opacity    = '1';
+                    el.style.pointerEvents = 'auto';
                 }
-            }
-        });
-
-        // Wait for DOM to be ready before appending
-        function mount() {
-            if (document.body) {
-                document.body.appendChild(tab);
-            } else {
-                setTimeout(mount, 100);
-            }
+            });
         }
-        mount();
+        // Run immediately and after a short delay to catch late mounts
+        ensureToggleVisible();
+        setTimeout(ensureToggleVisible, 500);
+        setTimeout(ensureToggleVisible, 1500);
     })();
     </script>
     """, unsafe_allow_html=True)
@@ -1179,26 +1162,153 @@ def stock_pill(qty, reorder):
 def page_login():
     inject_styles()
 
-    # ── Single-column centred layout ──
+    # ── Premium landing hero above the fold ──
+    st.markdown("""
+    <style>
+    /* Login page extra styles */
+    .lp-hero {
+        text-align: center;
+        padding: 2.5rem 1rem 1.5rem 1rem;
+    }
+    .lp-logo-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+    .lp-logo-icon {
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #F5A623, #C4831A);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.6rem;
+        box-shadow: 0 8px 28px rgba(245,166,35,0.45);
+    }
+    .lp-logo-text {
+        font-family: 'Syne', sans-serif;
+        font-size: 2.2rem; font-weight: 800;
+        color: #F0F4F8; letter-spacing: -0.05em;
+    }
+    .lp-badge {
+        display: inline-flex; align-items: center; gap: 0.45rem;
+        background: rgba(245,166,35,0.1);
+        border: 1px solid rgba(245,166,35,0.3);
+        border-radius: 99px;
+        padding: 0.35rem 1rem;
+        font-size: 0.75rem; color: #F5A623; font-weight: 600;
+        letter-spacing: 0.04em;
+        margin-bottom: 1.25rem;
+    }
+    .lp-headline {
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(1.7rem, 5vw, 2.6rem);
+        font-weight: 800; color: #F0F4F8;
+        letter-spacing: -0.04em; line-height: 1.15;
+        margin-bottom: 0.75rem;
+    }
+    .lp-headline span { color: #F5A623; }
+    .lp-sub {
+        font-size: 1rem; color: #8BA0B8;
+        max-width: 520px; margin: 0 auto 1.75rem auto;
+        line-height: 1.65;
+    }
+    .lp-value-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        max-width: 720px;
+        margin: 0 auto 2rem auto;
+    }
+    .lp-value-card {
+        background: #111827;
+        border: 1px solid #1F2D3D;
+        border-radius: 14px;
+        padding: 1.1rem 1rem;
+        text-align: center;
+        transition: border-color 0.2s;
+    }
+    .lp-value-card:hover { border-color: #F5A623; }
+    .lp-value-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+    .lp-value-title {
+        font-family: 'Syne', sans-serif;
+        font-size: 0.8rem; font-weight: 700;
+        color: #F0F4F8; margin-bottom: 0.2rem;
+    }
+    .lp-value-desc { font-size: 0.72rem; color: #4A6080; line-height: 1.4; }
+    .lp-divider {
+        display: flex; align-items: center; gap: 1rem;
+        max-width: 480px; margin: 0 auto 1.5rem auto;
+    }
+    .lp-divider::before, .lp-divider::after {
+        content: ''; flex: 1;
+        border-top: 1px solid #1F2D3D;
+    }
+    .lp-divider span { font-size: 0.75rem; color: #4A6080; white-space: nowrap; }
+    .lp-trust-strip {
+        display: flex; justify-content: center; align-items: center;
+        gap: 1.5rem; flex-wrap: wrap;
+        padding: 1rem 0;
+        border-top: 1px solid #1F2D3D;
+        margin-top: 1rem;
+    }
+    .lp-trust-item {
+        display: flex; align-items: center; gap: 0.4rem;
+        font-size: 0.75rem; color: #4A6080;
+    }
+    .lp-trust-item span { color: #00C896; }
+    @media (max-width: 600px) {
+        .lp-value-grid { grid-template-columns: 1fr 1fr !important; }
+        .lp-trust-strip { gap: 0.75rem; }
+    }
+    </style>
+
+    <div class="lp-hero">
+        <div class="lp-logo-wrap">
+            <div class="lp-logo-icon">📊</div>
+            <div class="lp-logo-text">BizPulse</div>
+        </div>
+        <div class="lp-badge">
+            <span>●</span> Built for Nigerian SMEs · Powered by real-time data
+        </div>
+        <div class="lp-headline">
+            Run your business<br>like you <span>know your numbers.</span>
+        </div>
+        <div class="lp-sub">
+            Sales tracking, inventory control, expense management and profit analytics —
+            all in one dashboard designed for the way Nigerian businesses actually work.
+        </div>
+
+        <div class="lp-value-grid">
+            <div class="lp-value-card">
+                <div class="lp-value-icon">🛒</div>
+                <div class="lp-value-title">Sales Tracking</div>
+                <div class="lp-value-desc">Record every sale instantly. See today, weekly & monthly revenue at a glance.</div>
+            </div>
+            <div class="lp-value-card">
+                <div class="lp-value-icon">📦</div>
+                <div class="lp-value-title">Inventory Control</div>
+                <div class="lp-value-desc">Track stock levels, get low-stock alerts and never run out of top sellers.</div>
+            </div>
+            <div class="lp-value-card">
+                <div class="lp-value-icon">💸</div>
+                <div class="lp-value-title">Expense Manager</div>
+                <div class="lp-value-desc">Log every expense, see where your money goes and protect your profit margins.</div>
+            </div>
+            <div class="lp-value-card">
+                <div class="lp-value-icon">🧠</div>
+                <div class="lp-value-title">Profit Insights</div>
+                <div class="lp-value-desc">Gross profit, net profit, best-selling products and trend reports — all automatic.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="lp-divider"><span>Sign in to your account</span></div>
+    """, unsafe_allow_html=True)
+
+    # ── Login form — centred, clean ──
     _, mid, _ = st.columns([1, 2, 1])
 
     with mid:
-        # Logo + brand
-        st.markdown(
-            "<div style='text-align:center;margin-bottom:0.25rem;"
-            "font-family:Syne,sans-serif;font-size:2rem;font-weight:800;"
-            "color:#F0F4F8;letter-spacing:-0.05em;'>📊 BizPulse</div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<div style='text-align:center;font-size:0.85rem;"
-            "color:#4A6080;margin-bottom:1.5rem;'>"
-            "Sales · Inventory · Profit analytics — built for Nigerian SMEs"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        # Login form
         with st.form("login_form"):
             email    = st.text_input("Email address", placeholder="you@business.com")
             password = st.text_input("Password", type="password", placeholder="••••••••")
@@ -1235,14 +1345,16 @@ def page_login():
                 st.session_state.current_page = "signup"
                 st.rerun()
 
-        st.markdown(
-            "<div style='margin-top:1rem;padding-top:0.875rem;"
-            "border-top:1px solid #1F2D3D;text-align:center;"
-            "font-size:0.7rem;color:#4A6080;'>"
-            "🔒 256-bit encrypted · Your data is never shared"
-            "</div>",
-            unsafe_allow_html=True,
-        )
+    # ── Trust strip ──
+    st.markdown("""
+    <div class="lp-trust-strip">
+        <div class="lp-trust-item"><span>✓</span> 256-bit encrypted</div>
+        <div class="lp-trust-item"><span>✓</span> Your data is never shared</div>
+        <div class="lp-trust-item"><span>✓</span> 14-day free trial</div>
+        <div class="lp-trust-item"><span>✓</span> No credit card required</div>
+        <div class="lp-trust-item"><span>✓</span> Cancel anytime</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────
