@@ -1934,69 +1934,93 @@ def page_record_sale():
         section_header("🛍️ Build Cart")
 
         # Product selector form
-        with st.form("add_to_cart", clear_on_submit=True):
-            in_stock = products_df[products_df["stock_quantity"] > 0]
-            if in_stock.empty:
-                st.warning("All products are out of stock.")
-                st.form_submit_button("Add to Cart", disabled=True)
-            else:
-                prod_names = in_stock["product_name"].tolist()
-                sel_name   = st.selectbox("Product", prod_names, key="cart_prod")
+        in_stock = products_df[products_df["stock_quantity"] > 0]
+        if in_stock.empty:
+            st.warning("All products are out of stock.")
+        else:
+            prod_names = in_stock["product_name"].tolist()
 
-                # Show original price as reference
-                sel_prod_row   = in_stock[in_stock["product_name"] == sel_name].iloc[0]
-                original_price = safe_float(sel_prod_row["selling_price"])
-                st.caption(f"📦 Listed price: {fmt_naira(original_price)}")
+            # ── Product selector OUTSIDE form so price updates on change ──
+            sel_name = st.selectbox("Product", prod_names, key="cart_prod")
+            sel_prod_row   = in_stock[in_stock["product_name"] == sel_name].iloc[0]
+            original_price = safe_float(sel_prod_row["selling_price"])
+            avail_qty      = int(sel_prod_row["stock_quantity"])
 
+            # Already-in-cart qty for this product
+            already_in_cart = sum(
+                i["quantity"] for i in st.session_state.cart
+                if i["product_id"] == sel_prod_row["product_id"]
+            )
+            remaining = avail_qty - already_in_cart
+            st.caption(
+                f"📦 Listed price: **{fmt_naira(original_price)}** "
+                f"&nbsp;|&nbsp; 🏷️ Stock available: **{remaining} units**"
+            )
+
+            # ── Qty + price inside form ──
+            with st.form("add_to_cart", clear_on_submit=True):
                 ac1, ac2 = st.columns(2)
-                sel_qty        = ac1.number_input("Quantity", min_value=1, value=1, step=1)
+                sel_qty        = ac1.number_input("Quantity", min_value=1,
+                                                   max_value=max(1, remaining),
+                                                   value=1, step=1)
                 sel_sell_price = ac2.number_input(
                     "Selling Price (₦)",
                     min_value=0.0,
                     value=float(original_price),
-                    step=100.0,
-                    help="Leave as-is for full price. Enter lower amount if negotiated."
+                    step=500.0,
+                    help="Defaults to listed price. Type negotiated amount if different."
+                )
+                if sel_sell_price > original_price:
+                    st.warning(
+                        f"⚠️ Above listed price ({fmt_naira(original_price)}). Confirm?"
+                    )
+                add_btn = st.form_submit_button(
+                    "➕ Add to Cart", type="primary", use_container_width=True
                 )
 
-                # Warn if entered price is higher than listed
-                if sel_sell_price > original_price:
-                    st.warning(f"⚠️ Entered price is higher than listed price {fmt_naira(original_price)}. Please confirm.")
-
-                add_btn = st.form_submit_button("➕ Add to Cart", type="primary",
-                                                 use_container_width=True)
-
-            if add_btn and not in_stock.empty:
+            if add_btn:
                 prod_row   = in_stock[in_stock["product_name"] == sel_name].iloc[0]
-                avail_qty  = int(prod_row["stock_quantity"])
-                unit_price = safe_float(prod_row["selling_price"])  # original listed price
+                unit_price = safe_float(prod_row["selling_price"])
                 cost_price = safe_float(prod_row["cost_price"])
 
-                # Check if product already in cart
-                existing_qty = sum(
-                    i["quantity"] for i in st.session_state.cart
-                    if i["product_id"] == prod_row["product_id"]
-                )
-                if existing_qty + sel_qty > avail_qty:
-                    st.error(f"Only {avail_qty - existing_qty} units available for {sel_name}.")
+                if sel_qty > remaining:
+                    st.error(f"Only {remaining} units available for {sel_name}.")
                 else:
                     negotiated_price = float(sel_sell_price)
-                    disc_amt         = round((unit_price - negotiated_price) * sel_qty, 2)
-                    disc_amt         = max(0, disc_amt)  # no negative discount
+                    disc_amt         = max(0, round((unit_price - negotiated_price) * sel_qty, 2))
                     line_total       = round(negotiated_price * sel_qty, 2)
                     cost_total       = round(cost_price * sel_qty, 2)
-                    st.session_state.cart.append({
-                        "product_id":      prod_row["product_id"],
-                        "product_name":    sel_name,
-                        "quantity":        int(sel_qty),
-                        "unit_price":      unit_price,        # original listed price
-                        "negotiated_price": negotiated_price, # actual sold price
-                        "cost_price":      cost_price,
-                        "discount_pct":    0.0,               # not used anymore
-                        "discount_amt":    disc_amt,
-                        "line_total":      line_total,
-                        "cost_total":      cost_total,
-                        "gross_profit":    round(line_total - cost_total, 2),
-                    })
+
+                    # Merge if same product + same negotiated price already in cart
+                    merged = False
+                    for item in st.session_state.cart:
+                        if (item["product_id"] == prod_row["product_id"] and
+                                item["negotiated_price"] == negotiated_price):
+                            item["quantity"]     += int(sel_qty)
+                            item["disc_amt"]      = max(0, round(
+                                (unit_price - negotiated_price) * item["quantity"], 2))
+                            item["line_total"]    = round(negotiated_price * item["quantity"], 2)
+                            item["cost_total"]    = round(cost_price * item["quantity"], 2)
+                            item["gross_profit"]  = round(
+                                item["line_total"] - item["cost_total"], 2)
+                            item["discount_amt"]  = item["disc_amt"]
+                            merged = True
+                            break
+
+                    if not merged:
+                        st.session_state.cart.append({
+                            "product_id":       prod_row["product_id"],
+                            "product_name":     sel_name,
+                            "quantity":         int(sel_qty),
+                            "unit_price":       unit_price,
+                            "negotiated_price": negotiated_price,
+                            "cost_price":       cost_price,
+                            "discount_pct":     0.0,
+                            "discount_amt":     disc_amt,
+                            "line_total":       line_total,
+                            "cost_total":       cost_total,
+                            "gross_profit":     round(line_total - cost_total, 2),
+                        })
                     st.session_state.sale_done = None
                     st.rerun()
 
