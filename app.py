@@ -33,7 +33,8 @@ TBL_PRODUCTS = "products"
 TBL_SALES    = "sales"
 TBL_EXPENSES = "expenses"
 TBL_PAYMENTS = "payments"
-TBL_RESTOCK  = "restock_log"
+TBL_RESTOCK    = "restock_log"
+TBL_SALE_ITEMS = "sale_items"
 
 # Plan pricing & Flutterwave links
 PAYMENT_DETAILS = {
@@ -1906,177 +1907,407 @@ Here's your business snapshot for
 
 # ─────────────────────────────────────────────
 #  PAGE: RECORD SALE
-# ─────────────────────────────────────────────
-
-def page_record_sale():
+# ───────────────def page_record_sale():
     user        = st.session_state.user
     business_id = user["business_id"]
 
-    page_header("🛒 Record a Sale", "Log a transaction and update inventory automatically")
+    page_header("🛒 Record a Sale", "Build a cart, apply discounts, print receipt")
 
     products_df = get_products_df(business_id)
-
     if products_df.empty:
-        st.warning("You have no products yet. Add products first before recording sales.")
-        if st.button("→ Go to Product Management"):
-            st.session_state.current_page = "products"
-            st.rerun()
+        st.warning("No products found. Please add products first.")
         return
 
-    # Only show in-stock products
-    available = products_df[products_df["stock_quantity"] > 0].copy()
-    if available.empty:
-        st.error("All products are out of stock. Please restock before recording sales.")
-        return
+    # ── Session state cart ──
+    if "cart" not in st.session_state:
+        st.session_state.cart = []
+    if "sale_done" not in st.session_state:
+        st.session_state.sale_done = None  # holds receipt data after recording
 
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([3, 2], gap="large")
 
+    # ════════════════════════════════════
+    #  LEFT: Product selector + cart
+    # ════════════════════════════════════
     with col1:
-        # ── Product selector OUTSIDE the form so it re-renders reactively ──
-        # When the user changes the product, Streamlit re-runs and max_qty updates immediately.
-        product_options = {
-            f"{r['product_name']} (Stock: {int(r['stock_quantity'])} | ₦{r['selling_price']:,.0f})": r
-            for _, r in available.iterrows()
-        }
-        selected_label   = st.selectbox("Select product", list(product_options.keys()),
-                                        key="sale_product_select")
-        selected_product = product_options[selected_label]
-        max_qty          = int(selected_product["stock_quantity"])
+        section_header("🛍️ Build Cart")
 
-        # ── Payment method also outside so it's always current ──
-        payment_method = st.selectbox(
-            "Payment method", ["Cash", "Bank Transfer", "POS", "Mobile Money"],
-            key="sale_payment_method"
-        )
+        # Product selector form
+        with st.form("add_to_cart", clear_on_submit=True):
+            in_stock = products_df[products_df["stock_quantity"] > 0]
+            if in_stock.empty:
+                st.warning("All products are out of stock.")
+                st.form_submit_button("Add to Cart", disabled=True)
+            else:
+                prod_names = in_stock["product_name"].tolist()
+                sel_name   = st.selectbox("Product", prod_names, key="cart_prod")
+                ac1, ac2, ac3 = st.columns(3)
+                sel_qty  = ac1.number_input("Quantity", min_value=1, value=1, step=1)
+                sel_disc = ac2.number_input("Discount %", min_value=0.0, max_value=100.0,
+                                             value=0.0, step=0.5,
+                                             help="Enter % discount for this item")
+                add_btn  = st.form_submit_button("➕ Add to Cart", type="primary",
+                                                  use_container_width=True)
 
-        # ── Only quantity + submit inside the form ──
-        with st.form("record_sale_form", clear_on_submit=True):
-            # Key is required so we can read the submitted value from
-            # st.session_state — clear_on_submit resets the widget to value=1
-            # on the rerun AFTER submit, but session_state still holds the
-            # value that was present at the moment the button was clicked.
-            quantity = st.number_input(
-                f"Quantity (max {max_qty} available)",
-                min_value=1,
-                value=1, step=1,
-                key="sale_quantity",
-            )
+            if add_btn and not in_stock.empty:
+                prod_row   = in_stock[in_stock["product_name"] == sel_name].iloc[0]
+                avail_qty  = int(prod_row["stock_quantity"])
+                unit_price = safe_float(prod_row["selling_price"])
+                cost_price = safe_float(prod_row["cost_price"])
 
-            # Live calculation display
-            unit_price   = safe_float(selected_product["selling_price"])
-            cost_price   = safe_float(selected_product["cost_price"])
-            total        = unit_price * quantity
-            cost_total   = cost_price * quantity
-            gross_profit = total - cost_total
+                # Check if product already in cart
+                existing_qty = sum(
+                    i["quantity"] for i in st.session_state.cart
+                    if i["product_id"] == prod_row["product_id"]
+                )
+                if existing_qty + sel_qty > avail_qty:
+                    st.error(f"Only {avail_qty - existing_qty} units available for {sel_name}.")
+                else:
+                    disc_amt   = round(unit_price * sel_qty * (sel_disc / 100), 2)
+                    line_total = round(unit_price * sel_qty - disc_amt, 2)
+                    cost_total = round(cost_price * sel_qty, 2)
+                    st.session_state.cart.append({
+                        "product_id":   prod_row["product_id"],
+                        "product_name": sel_name,
+                        "quantity":     int(sel_qty),
+                        "unit_price":   unit_price,
+                        "cost_price":   cost_price,
+                        "discount_pct": float(sel_disc),
+                        "discount_amt": disc_amt,
+                        "line_total":   line_total,
+                        "cost_total":   cost_total,
+                        "gross_profit": round(line_total - cost_total, 2),
+                    })
+                    st.session_state.sale_done = None
+                    st.rerun()
 
-            st.markdown(f"""
-<div class="kpi-card" style="margin-top:1rem;">
-<div class="kpi-label">Sale Summary</div>
-<div style="display:flex; gap:2rem; margin-top:0.5rem; flex-wrap:wrap;">
-<div>
-<div class="kpi-label">Unit Price</div>
-<div style="font-weight:700;font-size:1.1rem;color:#f1f5f9">{fmt_naira(unit_price)}</div>
-</div>
-<div>
-<div class="kpi-label">Quantity</div>
-<div style="font-weight:700;font-size:1.1rem;color:#f1f5f9">{quantity}</div>
-</div>
-<div>
-<div class="kpi-label">Total Amount</div>
-<div style="font-weight:800;font-size:1.4rem;color:#34d399">{fmt_naira(total)}</div>
-</div>
-<div>
-<div class="kpi-label">Gross Profit</div>
-<div style="font-weight:700;font-size:1.1rem;color:#a5b4fc">{fmt_naira(gross_profit)}</div>
-</div>
-</div>
-</div>
-            """, unsafe_allow_html=True)
+        # ── Cart display ──
+        if not st.session_state.cart:
+            st.info("Cart is empty. Add products above.")
+        else:
+            st.markdown("---")
+            section_header("🧾 Cart Items")
 
-            submitted = st.form_submit_button(
-                f"✅ Record Sale — {fmt_naira(total)}", use_container_width=True, type="primary"
-            )
+            grand_total    = 0
+            total_discount = 0
+            total_cost     = 0
+            total_profit   = 0
 
-            if submitted:
-                # Read ALL widget values from session_state at the moment of
-                # submission. clear_on_submit resets the widgets visually on
-                # the next rerun, but session_state retains the submitted values
-                # throughout the current execution — so this is always correct.
-                _label    = st.session_state.get("sale_product_select", selected_label)
-                _product  = product_options.get(_label, selected_product)
-                _payment  = st.session_state.get("sale_payment_method", payment_method)
-                _quantity = int(st.session_state.get("sale_quantity", quantity))
-
-                # Re-read current stock from sheet to avoid race condition with stale cache
-                fresh_products = get_products_df(business_id)
-                fresh_row      = fresh_products[
-                    fresh_products["product_id"] == _product["product_id"]
-                ]
-                if fresh_row.empty:
-                    st.error("Product not found. Please refresh and try again.")
-                    st.stop()
-
-                current_stock = int(fresh_row.iloc[0]["stock_quantity"])
-                if _quantity > current_stock:
-                    st.error(
-                        f"Only {current_stock} units available right now. "
-                        f"Please reduce the quantity."
+            for idx, item in enumerate(st.session_state.cart):
+                ic1, ic2 = st.columns([4, 1])
+                with ic1:
+                    disc_str = (f" — {item['discount_pct']}% off "
+                                f"(-{fmt_naira(item['discount_amt'])})"
+                                if item["discount_pct"] > 0 else "")
+                    item_desc = (
+                        f"**{item['product_name']}** × {item['quantity']} "
+                        f"@ {fmt_naira(item['unit_price'])}{disc_str}  \n"
+                        f"**Line total: {fmt_naira(item['line_total'])}**"
                     )
-                    st.stop()
+                    st.markdown(item_desc)
+                with ic2:
+                    if st.button("🗑️", key=f"rm_{idx}", help="Remove item"):
+                        st.session_state.cart.pop(idx)
+                        st.rerun()
 
-                sale_id = gen_id("SAL")
-                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                grand_total    += item["line_total"]
+                total_discount += item["discount_amt"]
+                total_cost     += item["cost_total"]
+                total_profit   += item["gross_profit"]
+                st.markdown("---")
 
-                # Snapshot values at time of sale
-                snap_unit_price   = safe_float(fresh_row.iloc[0]["selling_price"])
-                snap_cost_price   = safe_float(fresh_row.iloc[0]["cost_price"])
-                snap_total        = snap_unit_price * _quantity
-                snap_cost_total   = snap_cost_price * _quantity
-                snap_gross_profit = snap_total - snap_cost_total
+            # Cart summary
+            st.markdown(f"""
+<div class="kpi-card">
+<div class="kpi-label">Cart Summary</div>
+<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-top:0.75rem;">
+  <div><div class="kpi-label">Items</div>
+       <div style="font-weight:700;font-size:1.1rem;color:#f1f5f9">{len(st.session_state.cart)}</div></div>
+  <div><div class="kpi-label">Discount Given</div>
+       <div style="font-weight:700;font-size:1.1rem;color:#ef4444">{fmt_naira(total_discount)}</div></div>
+  <div><div class="kpi-label">Grand Total</div>
+       <div style="font-weight:700;font-size:1.4rem;color:#00C896">{fmt_naira(grand_total)}</div></div>
+  <div><div class="kpi-label">Gross Profit</div>
+       <div style="font-weight:700;font-size:1.1rem;color:#6366f1">{fmt_naira(total_profit)}</div></div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
-                # Write sale record to Supabase
+    # ════════════════════════════════════
+    #  RIGHT: Checkout + Today's sales
+    # ════════════════════════════════════
+    with col2:
+        section_header("💳 Checkout")
+
+        if st.session_state.cart:
+            with st.form("checkout_form"):
+                customer_name = st.text_input("Customer Name (optional)",
+                                               placeholder="e.g. Emeka Obi")
+                payment_method = st.selectbox(
+                    "Payment Method",
+                    ["Cash", "Bank Transfer", "POS", "Mobile Money"]
+                )
+                sale_note = st.text_input("Note (optional)",
+                                          placeholder="e.g. Bulk order, VIP customer")
+                confirm_sale = st.form_submit_button(
+                    f"✅ Record Sale — {fmt_naira(sum(i['line_total'] for i in st.session_state.cart))}",
+                    type="primary", use_container_width=True
+                )
+
+            if confirm_sale:
+                sale_id    = gen_id("SL")
+                sale_time  = datetime.now().isoformat()
+                cart       = st.session_state.cart
+                grand_total    = sum(i["line_total"]   for i in cart)
+                total_discount = sum(i["discount_amt"] for i in cart)
+                total_cost     = sum(i["cost_total"]   for i in cart)
+                total_profit   = sum(i["gross_profit"] for i in cart)
+
+                # ── Write sale header to sales table ──
                 sale_ok = db_insert(TBL_SALES, {
                     "sale_id":        sale_id,
                     "business_id":    business_id,
-                    "product_id":     _product["product_id"],
-                    "product_name":   _product["product_name"],
-                    "quantity":       _quantity,
-                    "unit_price":     snap_unit_price,
-                    "total_amount":   snap_total,
-                    "cost_total":     snap_cost_total,
-                    "gross_profit":   snap_gross_profit,
-                    "payment_method": _payment,
-                    "sale_date":      datetime.now().isoformat(),
-                    "recorded_by":    user.get("full_name", user.get("email", "")),
+                    "product_id":     cart[0]["product_id"],
+                    "product_name":   ", ".join(i["product_name"] for i in cart),
+                    "quantity":       sum(i["quantity"] for i in cart),
+                    "unit_price":     cart[0]["unit_price"],
+                    "total_amount":   grand_total,
+                    "cost_total":     total_cost,
+                    "gross_profit":   total_profit,
+                    "payment_method": payment_method,
+                    "sale_date":      sale_time,
+                    "customer_name":  customer_name.strip(),
+                    "discount_total": total_discount,
+                    "item_count":     len(cart),
                 })
 
                 if sale_ok:
-                    # Deduct stock immediately after confirmed write
-                    new_stock = current_stock - _quantity
-                    stock_ok  = db_update(TBL_PRODUCTS, "product_id", _product["product_id"], {"stock_quantity": new_stock})
-                    # Clear cache so next page load reads fresh data
+                    # ── Write each line item to sale_items ──
+                    items_ok = True
+                    for item in cart:
+                        ok = db_insert(TBL_SALE_ITEMS, {
+                            "item_id":      gen_id("ITM"),
+                            "sale_id":      sale_id,
+                            "business_id":  business_id,
+                            "product_id":   item["product_id"],
+                            "product_name": item["product_name"],
+                            "quantity":     item["quantity"],
+                            "unit_price":   item["unit_price"],
+                            "discount_pct": item["discount_pct"],
+                            "discount_amt": item["discount_amt"],
+                            "line_total":   item["line_total"],
+                            "cost_total":   item["cost_total"],
+                            "gross_profit": item["gross_profit"],
+                        })
+                        if not ok:
+                            items_ok = False
+
+                    # ── Deduct stock for all items ──
+                    live_products = get_products_df(business_id)
+                    for item in cart:
+                        if not live_products.empty:
+                            pr = live_products[live_products["product_id"] == item["product_id"]]
+                            if not pr.empty:
+                                new_stock = int(pr.iloc[0]["stock_quantity"]) - item["quantity"]
+                                db_update(TBL_PRODUCTS, "product_id",
+                                          item["product_id"],
+                                          {"stock_quantity": max(0, new_stock)})
+
                     st.cache_data.clear()
 
-                    if stock_ok:
-                        st.success(
-                            f"✅ Sale recorded! {fmt_naira(snap_total)} — "
-                            f"{_product['product_name']} × {_quantity} | "
-                            f"Stock remaining: {new_stock} units"
-                        )
-                        if new_stock <= safe_int(_product["reorder_level"]):
-                            st.warning(
-                                f"⚠️ Low stock: {_product['product_name']} "
-                                f"is at or below reorder level ({safe_int(_product['reorder_level'])} units)."
-                            )
-                    else:
-                        st.warning("✅ Sale recorded but stock count failed to update. "
-                                   "Please manually adjust stock in Product Management.")
+                    # ── Store receipt data and clear cart ──
+                    st.session_state.sale_done = {
+                        "sale_id":       sale_id,
+                        "sale_time":     sale_time,
+                        "customer_name": customer_name.strip(),
+                        "payment":       payment_method,
+                        "note":          sale_note.strip(),
+                        "items":         cart,
+                        "grand_total":   grand_total,
+                        "discount":      total_discount,
+                        "profit":        total_profit,
+                        "business_name": user.get("business_name", ""),
+                    }
+                    st.session_state.cart = []
+                    st.rerun()
                 else:
-                    st.error("❌ Failed to write sale to database. Check your Google Sheets "
-                             "connection and that the SALES tab headers match exactly.")
+                    st.error("Failed to record sale. Please try again.")
 
-    with col2:
-        section_header("Today's Sales")
+            if st.button("🗑️ Clear Cart", use_container_width=True):
+                st.session_state.cart = []
+                st.session_state.sale_done = None
+                st.rerun()
+        else:
+            st.info("Add items to the cart to checkout.")
+
+        # ── Receipt display ──
+        if st.session_state.get("sale_done"):
+            rd = st.session_state.sale_done
+            st.markdown("---")
+            section_header("🧾 Receipt")
+
+            receipt_lines = []
+            receipt_lines.append(f"{'='*38}")
+            receipt_lines.append(f"  {rd['business_name'].upper()}")
+            receipt_lines.append(f"  {datetime.fromisoformat(rd['sale_time']).strftime('%d %b %Y  %H:%M')}")
+            receipt_lines.append(f"  Sale ID: {rd['sale_id']}")
+            if rd["customer_name"]:
+                receipt_lines.append(f"  Customer: {rd['customer_name']}")
+            receipt_lines.append(f"{'='*38}")
+            for item in rd["items"]:
+                receipt_lines.append(
+                    f"  {item['product_name'][:20]:<20}"
+                )
+                disc_str = (f"  Discount: -{fmt_naira(item['discount_amt'])}"
+                            if item["discount_pct"] > 0 else "")
+                receipt_lines.append(
+                    f"  {item['quantity']} x {fmt_naira(item['unit_price'])}"
+                    f" = {fmt_naira(item['line_total'])}"
+                )
+                if disc_str:
+                    receipt_lines.append(disc_str)
+            receipt_lines.append(f"{'-'*38}")
+            if rd["discount"] > 0:
+                receipt_lines.append(f"  Total Discount: -{fmt_naira(rd['discount'])}")
+            receipt_lines.append(f"  TOTAL:  {fmt_naira(rd['grand_total'])}")
+            receipt_lines.append(f"  Payment: {rd['payment']}")
+            if rd["note"]:
+                receipt_lines.append(f"  Note: {rd['note']}")
+            receipt_lines.append(f"{'='*38}")
+            receipt_lines.append(f"  Thank you for your purchase!")
+            receipt_lines.append(f"{'='*38}")
+
+            receipt_text = "\n".join(receipt_lines)
+
+            st.code(receipt_text, language=None)
+
+            # ── PDF Receipt ──
+            try:
+                from reportlab.lib.pagesizes import A6
+                from reportlab.lib import colors
+                from reportlab.lib.units import mm
+                from reportlab.platypus import (SimpleDocTemplate, Paragraph,
+                                                Spacer, HRFlowable, Table, TableStyle)
+                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+                import io
+
+                buf = io.BytesIO()
+                doc = SimpleDocTemplate(
+                    buf, pagesize=A6,
+                    leftMargin=10*mm, rightMargin=10*mm,
+                    topMargin=8*mm,  bottomMargin=8*mm
+                )
+                styles = getSampleStyleSheet()
+                bold_center = ParagraphStyle("bc", parent=styles["Normal"],
+                                             fontName="Helvetica-Bold",
+                                             fontSize=11, alignment=TA_CENTER,
+                                             spaceAfter=2)
+                normal_c    = ParagraphStyle("nc", parent=styles["Normal"],
+                                             fontSize=8, alignment=TA_CENTER,
+                                             spaceAfter=1)
+                normal_l    = ParagraphStyle("nl", parent=styles["Normal"],
+                                             fontSize=8, alignment=TA_LEFT,
+                                             spaceAfter=1)
+                small_r     = ParagraphStyle("sr", parent=styles["Normal"],
+                                             fontSize=8, alignment=TA_RIGHT)
+
+                story = []
+                story.append(Paragraph(rd["business_name"].upper(), bold_center))
+                story.append(Paragraph(
+                    datetime.fromisoformat(rd["sale_time"]).strftime("%d %b %Y  %H:%M"),
+                    normal_c))
+                story.append(Paragraph(f"Sale ID: {rd['sale_id']}", normal_c))
+                if rd["customer_name"]:
+                    story.append(Paragraph(f"Customer: {rd['customer_name']}", normal_c))
+                story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
+                story.append(Spacer(1, 3*mm))
+
+                # Items table
+                tdata = [["Item", "Qty", "Price", "Total"]]
+                for item in rd["items"]:
+                    tdata.append([
+                        item["product_name"][:18],
+                        str(item["quantity"]),
+                        f"\u20a6{item['unit_price']:,.0f}",
+                        f"\u20a6{item['line_total']:,.0f}",
+                    ])
+                    if item["discount_pct"] > 0:
+                        tdata.append([
+                            f"  Discount ({item['discount_pct']}%)",
+                            "", "",
+                            f"-\u20a6{item['discount_amt']:,.0f}",
+                        ])
+
+                col_w = [45*mm, 10*mm, 22*mm, 22*mm]
+                t = Table(tdata, colWidths=col_w)
+                t.setStyle(TableStyle([
+                    ("FONTNAME",  (0,0), (-1,0),  "Helvetica-Bold"),
+                    ("FONTSIZE",  (0,0), (-1,-1),  8),
+                    ("ALIGN",     (1,0), (-1,-1),  "RIGHT"),
+                    ("LINEBELOW", (0,0), (-1,0),   0.5, colors.black),
+                    ("ROWBACKGROUNDS", (0,1), (-1,-1),
+                     [colors.white, colors.Color(0.95,0.95,0.95)]),
+                    ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+                ]))
+                story.append(t)
+                story.append(Spacer(1, 3*mm))
+                story.append(HRFlowable(width="100%", thickness=0.5, color=colors.grey))
+
+                if rd["discount"] > 0:
+                    story.append(Paragraph(
+                        f"Total Discount: -\u20a6{rd['discount']:,.0f}", normal_l))
+                story.append(Paragraph(
+                    f"<b>TOTAL: \u20a6{rd['grand_total']:,.0f}</b>", bold_center))
+                story.append(Paragraph(f"Payment: {rd['payment']}", normal_c))
+                if rd["note"]:
+                    story.append(Paragraph(f"Note: {rd['note']}", normal_c))
+                story.append(Spacer(1, 4*mm))
+                story.append(HRFlowable(width="100%", thickness=1, color=colors.black))
+                story.append(Paragraph("Thank you for your purchase!", normal_c))
+
+                doc.build(story)
+                pdf_bytes = buf.getvalue()
+
+                fname = (f"receipt_{rd['sale_id']}_"
+                         f"{datetime.fromisoformat(rd['sale_time']).strftime('%Y%m%d_%H%M')}.pdf")
+
+                st.download_button(
+                    label="📄 Download PDF Receipt",
+                    data=pdf_bytes,
+                    file_name=fname,
+                    mime="application/pdf",
+                    use_container_width=True,
+                    type="primary",
+                )
+
+                # WhatsApp share link
+                wa_text = (
+                    f"Receipt from {rd['business_name']}\n"
+                    f"Date: {datetime.fromisoformat(rd['sale_time']).strftime('%d %b %Y %H:%M')}\n"
+                    f"Items: {', '.join(f"{i['product_name']} x{i['quantity']}" for i in rd['items'])}\n"
+                    f"Total: \u20a6{rd['grand_total']:,.0f}\n"
+                    f"Payment: {rd['payment']}\n"
+                    f"Thank you!"
+                )
+                import urllib.parse
+                wa_url = f"https://wa.me/?text={urllib.parse.quote(wa_text)}"
+                st.markdown(
+                    f"""<a href="{wa_url}" target="_blank"
+                        style="display:block;text-align:center;background:#25D366;
+                               color:white;padding:0.6rem;border-radius:8px;
+                               font-weight:600;text-decoration:none;margin-top:0.5rem;">
+                        💬 Share via WhatsApp
+                    </a>""",
+                    unsafe_allow_html=True
+                )
+
+            except ImportError:
+                st.warning("Install reportlab for PDF receipts: pip install reportlab")
+
+        # ── Today's Sales sidebar ──
+        st.markdown("---")
+        section_header("Today\'s Sales")
         sales_df_today = get_sales_df(business_id)
         if not sales_df_today.empty:
             today = datetime.now().date()
@@ -2090,11 +2321,12 @@ def page_record_sale():
                 recent = today_sales.sort_values("sale_date", ascending=False).head(5)
                 for _, r in recent.iterrows():
                     st.markdown(
-                        f"• **{r['product_name']}** × {int(r['quantity'])} "
+                        f"\u2022 **{r['product_name']}** "
                         f"= {fmt_naira(r['total_amount'])} _{r['payment_method']}_"
                     )
         else:
             kpi_card("Today's Revenue", "₦0.00", "No sales yet today")
+
 
 
 def page_sales_history():
