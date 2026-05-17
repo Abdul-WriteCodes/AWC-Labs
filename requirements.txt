@@ -4,3 +4,4 @@ bcrypt>=4.1.0
 pandas>=2.1.0
 plotly>=5.18.0
 python-dateutil>=2.8.0
+reportlab
