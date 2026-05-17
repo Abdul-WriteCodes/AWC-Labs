@@ -33,6 +33,7 @@ TBL_PRODUCTS = "products"
 TBL_SALES    = "sales"
 TBL_EXPENSES = "expenses"
 TBL_PAYMENTS = "payments"
+TBL_RESTOCK  = "restock_log"
 
 # Plan pricing & Flutterwave links
 PAYMENT_DETAILS = {
@@ -2078,16 +2079,13 @@ def page_record_sale():
 
     with col2:
         section_header("Today's Sales")
-        sales_df = get_sales_df(business_id)
-        if not sales_df.empty:
+        sales_df_today = get_sales_df(business_id)
+        if not sales_df_today.empty:
             today = datetime.now().date()
-            today_sales = sales_df[sales_df["sale_date"].dt.date == today]
+            today_sales = sales_df_today[sales_df_today["sale_date"].dt.date == today]
             kpi_card("Today's Revenue",
                      fmt_naira(today_sales["total_amount"].sum()),
                      f"{len(today_sales)} transactions")
-            kpi_card("Today's Profit",
-                     fmt_naira(today_sales["gross_profit"].sum()),
-                     "Gross margin")
 
             if not today_sales.empty:
                 st.markdown("**Recent transactions:**")
@@ -2101,6 +2099,194 @@ def page_record_sale():
             kpi_card("Today's Revenue", "₦0.00", "No sales yet today")
 
 
+def page_sales_history():
+    """Sales History page: date filter, edit, delete with inventory reconciliation."""
+    user        = st.session_state.user
+    business_id = user["business_id"]
+
+    page_header("📋 Sales History", "View, edit or void past transactions")
+
+    sales_df = get_sales_df(business_id)
+    if sales_df.empty:
+        st.info("📭 No sales recorded yet.")
+        return
+
+    products_df = get_products_df(business_id)
+
+    # ── Filters ──
+    fc1, fc2, fc3 = st.columns(3)
+    start_date = fc1.date_input("From", value=(datetime.now() - timedelta(days=30)).date(), key="sh_from")
+    end_date   = fc2.date_input("To",   value=datetime.now().date(), key="sh_to")
+    search_sale = fc3.text_input("🔍 Search product", key="sh_search", placeholder="Product name…")
+
+    filtered = sales_df[
+        (sales_df["sale_date"].dt.date >= start_date) &
+        (sales_df["sale_date"].dt.date <= end_date)
+    ]
+    if search_sale:
+        filtered = filtered[filtered["product_name"].str.contains(search_sale, case=False, na=False)]
+
+    filtered = filtered.sort_values("sale_date", ascending=False)
+
+    # ── Summary KPIs ──
+    sk1, sk2, sk3 = st.columns(3)
+    with sk1:
+        kpi_card("Revenue (filtered)", fmt_naira(filtered["total_amount"].sum()), f"{len(filtered)} transactions")
+    with sk2:
+        kpi_card("Profit (filtered)", fmt_naira(filtered["gross_profit"].sum()), "Gross margin")
+    with sk3:
+        kpi_card("Avg Sale Value", fmt_naira(filtered["total_amount"].mean() if not filtered.empty else 0), "Per transaction")
+
+    st.markdown("---")
+
+    if filtered.empty:
+        st.info("No sales match the current filters.")
+        return
+
+    # ── Pagination ──
+    SH_PAGE_SIZE = 15
+    sh_total_pages = max(1, -(-len(filtered) // SH_PAGE_SIZE))
+    if "sh_page" not in st.session_state:
+        st.session_state.sh_page = 1
+    sh_pg = st.session_state.sh_page
+    page_df = filtered.iloc[(sh_pg - 1) * SH_PAGE_SIZE: sh_pg * SH_PAGE_SIZE]
+    st.caption(f"Showing {len(page_df)} of {len(filtered)} sales  •  Page {sh_pg} of {sh_total_pages}")
+
+    # ── Sale rows ──
+    for _, r in page_df.iterrows():
+        sale_id  = r["sale_id"]
+        sale_dt  = r["sale_date"].strftime("%d %b %Y %H:%M") if pd.notna(r["sale_date"]) else "—"
+        with st.expander(
+            f"**{r['product_name']}** × {int(r['quantity'])}  |  "
+            f"{fmt_naira(r['total_amount'])}  |  {r['payment_method']}  |  {sale_dt}",
+            expanded=False
+        ):
+            # ── Edit form ──
+            with st.form(f"edit_sale_{sale_id}"):
+                sf1, sf2 = st.columns(2)
+
+                # Product selector
+                prod_names = products_df["product_name"].tolist() if not products_df.empty else [r["product_name"]]
+                try:
+                    prod_idx = prod_names.index(r["product_name"])
+                except ValueError:
+                    prod_idx = 0
+                new_product_name = sf1.selectbox("Product", prod_names, index=prod_idx)
+                new_payment      = sf2.selectbox(
+                    "Payment Method",
+                    ["Cash", "Bank Transfer", "POS", "Mobile Money"],
+                    index=["Cash","Bank Transfer","POS","Mobile Money"].index(r["payment_method"])
+                    if r["payment_method"] in ["Cash","Bank Transfer","POS","Mobile Money"] else 0
+                )
+                new_qty  = sf1.number_input("Quantity", min_value=1, value=int(r["quantity"]), step=1)
+                new_date = sf2.date_input(
+                    "Sale Date",
+                    value=r["sale_date"].date() if pd.notna(r["sale_date"]) else datetime.now().date()
+                )
+                save_sale = st.form_submit_button("💾 Save Changes", type="primary")
+
+            if save_sale:
+                # Recalculate with new product and qty
+                if not products_df.empty:
+                    prod_row = products_df[products_df["product_name"] == new_product_name]
+                    if not prod_row.empty:
+                        new_unit_price   = safe_float(prod_row.iloc[0]["selling_price"])
+                        new_cost_price   = safe_float(prod_row.iloc[0]["cost_price"])
+                        new_product_id   = prod_row.iloc[0]["product_id"]
+                    else:
+                        new_unit_price   = safe_float(r["unit_price"])
+                        new_cost_price   = new_unit_price
+                        new_product_id   = r.get("product_id", "")
+                else:
+                    new_unit_price = safe_float(r["unit_price"])
+                    new_cost_price = new_unit_price
+                    new_product_id = r.get("product_id", "")
+
+                new_total   = new_unit_price * new_qty
+                new_cost_t  = new_cost_price * new_qty
+                new_profit  = new_total - new_cost_t
+                old_qty     = int(r["quantity"])
+                qty_delta   = new_qty - old_qty  # positive = need more stock deducted
+
+                # Check stock availability for the quantity delta
+                if not products_df.empty and qty_delta > 0:
+                    fresh_prod = products_df[products_df["product_id"] == new_product_id]
+                    if not fresh_prod.empty:
+                        avail = int(fresh_prod.iloc[0]["stock_quantity"])
+                        if qty_delta > avail:
+                            st.error(f"Not enough stock. Only {avail} units available to add.")
+                            st.stop()
+
+                ok = db_update(TBL_SALES, "sale_id", sale_id, {
+                    "product_id":     new_product_id,
+                    "product_name":   new_product_name,
+                    "quantity":       new_qty,
+                    "unit_price":     new_unit_price,
+                    "total_amount":   new_total,
+                    "cost_total":     new_cost_t,
+                    "gross_profit":   new_profit,
+                    "payment_method": new_payment,
+                    "sale_date":      str(new_date),
+                })
+                if ok:
+                    # Reconcile stock: reverse old qty, apply new qty
+                    if not products_df.empty and new_product_id:
+                        prod_row_fresh = products_df[products_df["product_id"] == new_product_id]
+                        if not prod_row_fresh.empty:
+                            current_stock = int(prod_row_fresh.iloc[0]["stock_quantity"])
+                            adjusted_stock = current_stock - qty_delta
+                            db_update(TBL_PRODUCTS, "product_id", new_product_id, {"stock_quantity": max(0, adjusted_stock)})
+                    st.cache_data.clear()
+                    st.success("✅ Sale updated and inventory reconciled.")
+                    st.rerun()
+                else:
+                    st.error("Failed to update sale.")
+
+            # ── Delete / Void ──
+            confirm_void_key = f"confirm_void_{sale_id}"
+            if not st.session_state.get(confirm_void_key, False):
+                if st.button("🗑️ Void / Delete this sale", key=f"void_{sale_id}"):
+                    st.session_state[confirm_void_key] = True
+                    st.rerun()
+            else:
+                st.warning(
+                    f"⚠️ Void **{r['product_name']} × {int(r['quantity'])}** "
+                    f"({fmt_naira(r['total_amount'])})? "
+                    f"This will restore {int(r['quantity'])} units to stock."
+                )
+                vd1, vd2 = st.columns(2)
+                if vd1.button("✅ Yes, void sale", key=f"yes_void_{sale_id}", type="primary"):
+                    ok = db_delete(TBL_SALES, "sale_id", sale_id)
+                    if ok:
+                        # Restore stock
+                        if not products_df.empty:
+                            prod_row = products_df[products_df["product_name"] == r["product_name"]]
+                            if not prod_row.empty:
+                                restored = int(prod_row.iloc[0]["stock_quantity"]) + int(r["quantity"])
+                                db_update(TBL_PRODUCTS, "product_id", prod_row.iloc[0]["product_id"], {"stock_quantity": restored})
+                        st.cache_data.clear()
+                        st.session_state.pop(confirm_void_key, None)
+                        st.success("✅ Sale voided and stock restored.")
+                        st.rerun()
+                    else:
+                        st.error("Failed to delete sale.")
+                if vd2.button("❌ Cancel", key=f"no_void_{sale_id}"):
+                    st.session_state.pop(confirm_void_key, None)
+                    st.rerun()
+
+    # ── Pagination controls ──
+    if sh_total_pages > 1:
+        st.markdown("---")
+        pp1, pp2, pp3 = st.columns([1, 3, 1])
+        if pp1.button("◀ Prev", disabled=(sh_pg <= 1), key="sh_prev"):
+            st.session_state.sh_page = max(1, sh_pg - 1)
+            st.rerun()
+        pp2.markdown(f"<div style='text-align:center;padding-top:0.5rem;color:#8BA0B8;'>Page {sh_pg} of {sh_total_pages}</div>", unsafe_allow_html=True)
+        if pp3.button("Next ▶", disabled=(sh_pg >= sh_total_pages), key="sh_next"):
+            st.session_state.sh_page = min(sh_total_pages, sh_pg + 1)
+            st.rerun()
+
+
 # ─────────────────────────────────────────────
 #  PAGE: PRODUCT MANAGEMENT
 # ─────────────────────────────────────────────
@@ -2111,7 +2297,7 @@ def page_products():
 
     page_header("📦 Product Management", "Add, edit and manage your inventory")
 
-    tab1, tab2, tab3 = st.tabs(["📋 All Products", "➕ Add Product", "🔄 Restock"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📋 All Products", "➕ Add Product", "🔄 Restock", "📜 Restock History"])
 
     # ── Tab 1: View All ──
     with tab1:
@@ -2135,13 +2321,33 @@ def page_products():
 
             st.markdown("---")
 
-            # Category filter
+            # Category filter + search
+            search_q = st.text_input("🔍 Search products", key="prod_search", placeholder="Type product name…")
             cats = ["All"] + sorted(products_df["category"].unique().tolist())
             selected_cat = st.selectbox("Filter by category", cats)
             disp = products_df if selected_cat == "All" else products_df[products_df["category"] == selected_cat]
+            if search_q:
+                disp = disp[disp["product_name"].str.contains(search_q, case=False, na=False)]
+
+            # Pagination
+            PAGE_SIZE = 15
+            total_pages = max(1, -(-len(disp) // PAGE_SIZE))  # ceiling division
+            if "prod_page" not in st.session_state:
+                st.session_state.prod_page = 1
+            # Reset page if filter changes
+            if st.session_state.get("_last_prod_search") != search_q or st.session_state.get("_last_prod_cat") != selected_cat:
+                st.session_state.prod_page = 1
+            st.session_state["_last_prod_search"] = search_q
+            st.session_state["_last_prod_cat"] = selected_cat
+
+            pg = st.session_state.prod_page
+            start_idx = (pg - 1) * PAGE_SIZE
+            disp_page = disp.iloc[start_idx: start_idx + PAGE_SIZE]
+
+            st.caption(f"Showing {len(disp_page)} of {len(disp)} products  •  Page {pg} of {total_pages}")
 
             # Display product cards
-            for _, row in disp.iterrows():
+            for _, row in disp_page.iterrows():
                 with st.expander(
                     f"**{row['product_name']}** | {row['category']} | "
                     f"Stock: {int(row['stock_quantity'])} | {fmt_naira(row['selling_price'])}",
@@ -2183,10 +2389,34 @@ def page_products():
                         st.success("Product updated!") if ok else st.error("Update failed.")
                         st.rerun()
 
-                    if st.button(f"🗑️ Delete {row['product_name']}", key=f"del_{row['product_id']}"):
-                        ok = db_delete(TBL_PRODUCTS, "product_id", row["product_id"])
-                        st.success("Product deleted.") if ok else st.error("Delete failed.")
-                        st.rerun()
+                    confirm_key = f"confirm_del_{row['product_id']}"
+                    if not st.session_state.get(confirm_key, False):
+                        if st.button(f"🗑️ Delete {row['product_name']}", key=f"del_{row['product_id']}"):
+                            st.session_state[confirm_key] = True
+                            st.rerun()
+                    else:
+                        st.warning(f"⚠️ Are you sure you want to delete **{row['product_name']}**? This cannot be undone.")
+                        c_yes, c_no = st.columns(2)
+                        if c_yes.button("✅ Yes, delete", key=f"yes_del_{row['product_id']}", type="primary"):
+                            ok = db_delete(TBL_PRODUCTS, "product_id", row["product_id"])
+                            st.session_state.pop(confirm_key, None)
+                            st.success("Product deleted.") if ok else st.error("Delete failed.")
+                            st.rerun()
+                        if c_no.button("❌ Cancel", key=f"no_del_{row['product_id']}"):
+                            st.session_state.pop(confirm_key, None)
+                            st.rerun()
+
+            # Pagination controls
+            if total_pages > 1:
+                st.markdown("---")
+                pc1, pc2, pc3 = st.columns([1, 3, 1])
+                if pc1.button("◀ Prev", disabled=(pg <= 1), key="prod_prev"):
+                    st.session_state.prod_page = max(1, pg - 1)
+                    st.rerun()
+                pc2.markdown(f"<div style='text-align:center;padding-top:0.5rem;color:#8BA0B8;'>Page {pg} of {total_pages}</div>", unsafe_allow_html=True)
+                if pc3.button("Next ▶", disabled=(pg >= total_pages), key="prod_next"):
+                    st.session_state.prod_page = min(total_pages, pg + 1)
+                    st.rerun()
 
     # ── Tab 2: Add Product ──
     with tab2:
@@ -2256,6 +2486,19 @@ def page_products():
                 new_qty = int(selected_product["stock_quantity"]) + add_qty
                 ok = db_update(TBL_PRODUCTS, "product_id", selected_product["product_id"], {"stock_quantity": new_qty})
                 if ok:
+                    # Log the restock event for audit trail
+                    db_insert(TBL_RESTOCK, {
+                        "restock_id":   gen_id("RST"),
+                        "business_id":  business_id,
+                        "product_id":   selected_product["product_id"],
+                        "product_name": selected_product["product_name"],
+                        "qty_added":    add_qty,
+                        "qty_before":   int(selected_product["stock_quantity"]),
+                        "qty_after":    new_qty,
+                        "note":         restock_note.strip() if restock_note else "",
+                        "recorded_by":  user.get("full_name", user.get("email", "")),
+                        "restock_date": datetime.now().isoformat(),
+                    })
                     st.success(
                         f"✅ Stock updated! {selected_product['product_name']}: "
                         f"{int(selected_product['stock_quantity'])} → {new_qty} units"
@@ -2263,6 +2506,35 @@ def page_products():
                     st.rerun()
                 else:
                     st.error("Failed to update stock.")
+
+    # ── Tab 4: Restock History ──
+    with tab4:
+        section_header("📜 Restock History")
+        restock_df = db_fetch(TBL_RESTOCK, {"business_id": business_id})
+        if restock_df.empty:
+            st.info("No restock history yet. Every restock will be logged here automatically.")
+        else:
+            restock_df["restock_date"] = pd.to_datetime(restock_df["restock_date"], errors="coerce", utc=True).dt.tz_localize(None)
+            restock_df = restock_df.sort_values("restock_date", ascending=False)
+
+            # Search
+            search_rst = st.text_input("🔍 Search by product name", key="restock_search", placeholder="Type to filter…")
+            if search_rst:
+                restock_df = restock_df[restock_df["product_name"].str.contains(search_rst, case=False, na=False)]
+
+            display_cols = [c for c in ["restock_date","product_name","qty_before","qty_added","qty_after","note","recorded_by"] if c in restock_df.columns]
+            st.dataframe(
+                restock_df[display_cols].rename(columns={
+                    "restock_date":  "Date",
+                    "product_name":  "Product",
+                    "qty_before":    "Stock Before",
+                    "qty_added":     "Units Added",
+                    "qty_after":     "Stock After",
+                    "note":          "Note",
+                    "recorded_by":   "Recorded By",
+                }),
+                use_container_width=True,
+            )
 
 
 # ─────────────────────────────────────────────
@@ -2303,7 +2575,7 @@ def page_expenses():
                 kpi_card("Average Expense", fmt_naira(avg), "Per entry")
 
             if not filtered.empty:
-                # Category breakdown
+                # Category breakdown chart
                 cat_breakdown = (
                     filtered.groupby("category")["amount"]
                     .sum().reset_index()
@@ -2324,19 +2596,84 @@ def page_expenses():
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
-                # Table
-                st.dataframe(
-                    filtered[["expense_date","expense_name","category","amount","recorded_by"]]
-                    .sort_values("expense_date", ascending=False)
-                    .rename(columns={
-                        "expense_date":  "Date",
-                        "expense_name":  "Description",
-                        "category":      "Category",
-                        "amount":        "Amount (₦)",
-                        "recorded_by":   "Recorded By",
-                    }),
-                    use_container_width=True,
-                )
+                # Search
+                exp_search = st.text_input("🔍 Search expenses", key="exp_search", placeholder="Filter by description…")
+                if exp_search:
+                    filtered = filtered[filtered["expense_name"].str.contains(exp_search, case=False, na=False)]
+
+                # Pagination
+                EXP_PAGE_SIZE = 20
+                exp_total_pages = max(1, -(-len(filtered) // EXP_PAGE_SIZE))
+                if "exp_page" not in st.session_state:
+                    st.session_state.exp_page = 1
+                exp_pg = st.session_state.exp_page
+                filtered_sorted = filtered.sort_values("expense_date", ascending=False)
+                exp_page_df = filtered_sorted.iloc[(exp_pg - 1) * EXP_PAGE_SIZE: exp_pg * EXP_PAGE_SIZE]
+
+                st.caption(f"Showing {len(exp_page_df)} of {len(filtered)} entries  •  Page {exp_pg} of {exp_total_pages}")
+                st.markdown("---")
+
+                # Editable rows
+                for _, r in exp_page_df.iterrows():
+                    exp_id = r["expense_id"]
+                    edit_key = f"exp_edit_{exp_id}"
+                    with st.expander(
+                        f"**{r['expense_name']}** | {r['category']} | "
+                        f"{fmt_naira(r['amount'])} | {r['expense_date'].strftime('%d %b %Y') if pd.notna(r['expense_date']) else ''}",
+                        expanded=False
+                    ):
+                        with st.form(f"edit_exp_{exp_id}"):
+                            ef1, ef2 = st.columns(2)
+                            new_exp_name = ef1.text_input("Description", value=r["expense_name"])
+                            new_exp_cat  = ef2.selectbox("Category", [
+                                "Rent","Utilities","Salaries","Supplies","Transport",
+                                "Marketing","Maintenance","Taxes","Miscellaneous"
+                            ], index=["Rent","Utilities","Salaries","Supplies","Transport",
+                                      "Marketing","Maintenance","Taxes","Miscellaneous"].index(r["category"])
+                                if r["category"] in ["Rent","Utilities","Salaries","Supplies","Transport",
+                                                     "Marketing","Maintenance","Taxes","Miscellaneous"] else 0)
+                            new_exp_amt  = ef1.number_input("Amount (₦)", value=safe_float(r["amount"]), min_value=0.0, step=100.0)
+                            new_exp_date = ef2.date_input("Date", value=r["expense_date"].date() if pd.notna(r["expense_date"]) else datetime.now().date())
+                            save_exp = st.form_submit_button("💾 Save Changes", type="primary")
+
+                        if save_exp:
+                            ok = db_update(TBL_EXPENSES, "expense_id", exp_id, {
+                                "expense_name": new_exp_name.strip(),
+                                "category":     new_exp_cat,
+                                "amount":       new_exp_amt,
+                                "expense_date": str(new_exp_date),
+                            })
+                            st.success("Expense updated!") if ok else st.error("Update failed.")
+                            st.rerun()
+
+                        # Delete with confirmation
+                        confirm_exp_key = f"confirm_del_exp_{exp_id}"
+                        if not st.session_state.get(confirm_exp_key, False):
+                            if st.button("🗑️ Delete this expense", key=f"del_exp_{exp_id}"):
+                                st.session_state[confirm_exp_key] = True
+                                st.rerun()
+                        else:
+                            st.warning("⚠️ Delete this expense entry permanently?")
+                            ce1, ce2 = st.columns(2)
+                            if ce1.button("✅ Yes, delete", key=f"yes_del_exp_{exp_id}", type="primary"):
+                                db_delete(TBL_EXPENSES, "expense_id", exp_id)
+                                st.session_state.pop(confirm_exp_key, None)
+                                st.rerun()
+                            if ce2.button("❌ Cancel", key=f"no_del_exp_{exp_id}"):
+                                st.session_state.pop(confirm_exp_key, None)
+                                st.rerun()
+
+                # Pagination controls
+                if exp_total_pages > 1:
+                    st.markdown("---")
+                    ep1, ep2, ep3 = st.columns([1, 3, 1])
+                    if ep1.button("◀ Prev", disabled=(exp_pg <= 1), key="exp_prev"):
+                        st.session_state.exp_page = max(1, exp_pg - 1)
+                        st.rerun()
+                    ep2.markdown(f"<div style='text-align:center;padding-top:0.5rem;color:#8BA0B8;'>Page {exp_pg} of {exp_total_pages}</div>", unsafe_allow_html=True)
+                    if ep3.button("Next ▶", disabled=(exp_pg >= exp_total_pages), key="exp_next"):
+                        st.session_state.exp_page = min(exp_total_pages, exp_pg + 1)
+                        st.rerun()
 
     with tab2:
         with st.form("log_expense_form", clear_on_submit=True):
@@ -2358,7 +2695,7 @@ def page_expenses():
                 ok = db_insert(TBL_EXPENSES, {
                     "expense_id":   expense_id,
                     "business_id":  business_id,
-                    "description":  exp_name.strip(),
+                    "expense_name": exp_name.strip(),
                     "category":     category,
                     "amount":       amount,
                     "expense_date": str(expense_date),
@@ -2714,9 +3051,20 @@ def page_admin():
                                 st.success(f"✅ {u['business_name']} activated until {end_dt}")
                                 st.rerun()
                     with col3:
-                        if st.button("🗑️ Delete", key=f"del_u_{u['user_id']}"):
-                            db_delete(TBL_USERS, "user_id", u["user_id"])
-                            st.rerun()
+                        confirm_del_key = f"confirm_del_user_{u['user_id']}"
+                        if not st.session_state.get(confirm_del_key, False):
+                            if st.button("🗑️ Delete", key=f"del_u_{u['user_id']}"):
+                                st.session_state[confirm_del_key] = True
+                                st.rerun()
+                        else:
+                            st.warning("Delete this user?")
+                            if st.button("✅ Confirm", key=f"confirm_yes_u_{u['user_id']}", type="primary"):
+                                db_delete(TBL_USERS, "user_id", u["user_id"])
+                                st.session_state.pop(confirm_del_key, None)
+                                st.rerun()
+                            if st.button("❌ Cancel", key=f"confirm_no_u_{u['user_id']}"):
+                                st.session_state.pop(confirm_del_key, None)
+                                st.rerun()
                     st.markdown("---")
 
     # ── Active ──
@@ -3202,8 +3550,36 @@ def page_admin():
     with tab6:
         show_cols = ["business_name","full_name","email","plan_type","plan_status","subscription_end","created_at"]
         display   = users_df[[c for c in show_cols if c in users_df.columns]]
-        st.dataframe(display, use_container_width=True)
-        csv = display.to_csv(index=False).encode("utf-8")
+
+        admin_search = st.text_input("🔍 Search users", key="admin_user_search", placeholder="Name, email or business…")
+        if admin_search:
+            mask = (
+                display["business_name"].str.contains(admin_search, case=False, na=False) |
+                display["full_name"].str.contains(admin_search, case=False, na=False) |
+                display["email"].str.contains(admin_search, case=False, na=False)
+            )
+            display = display[mask]
+
+        AU_PAGE = 25
+        au_total = max(1, -(-len(display) // AU_PAGE))
+        if "au_page" not in st.session_state:
+            st.session_state.au_page = 1
+        au_pg = st.session_state.au_page
+        display_page = display.iloc[(au_pg - 1) * AU_PAGE: au_pg * AU_PAGE]
+        st.caption(f"Showing {len(display_page)} of {len(display)} users  •  Page {au_pg} of {au_total}")
+        st.dataframe(display_page, use_container_width=True)
+
+        if au_total > 1:
+            au1, au2, au3 = st.columns([1, 3, 1])
+            if au1.button("◀ Prev", disabled=(au_pg <= 1), key="au_prev"):
+                st.session_state.au_page = max(1, au_pg - 1)
+                st.rerun()
+            au2.markdown(f"<div style='text-align:center;padding-top:0.5rem;color:#8BA0B8;'>Page {au_pg} of {au_total}</div>", unsafe_allow_html=True)
+            if au3.button("Next ▶", disabled=(au_pg >= au_total), key="au_next"):
+                st.session_state.au_page = min(au_total, au_pg + 1)
+                st.rerun()
+
+        csv = users_df[[c for c in show_cols if c in users_df.columns]].to_csv(index=False).encode("utf-8")
         st.download_button("⬇️ Export All Users CSV", data=csv,
                            file_name="bizpulse_users.csv", mime="text/csv")
 
@@ -3332,11 +3708,12 @@ box-shadow:0 0 6px {status_color};"></div>
 
         # ── Navigation ──
         nav_items = [
-            ("dashboard",   "🏠", "Dashboard"),
-            ("record_sale", "🛒", "Record Sale"),
-            ("products",    "📦", "Products"),
-            ("expenses",    "💸", "Expenses"),
-            ("insights",    "🧠", "Insights"),
+            ("dashboard",      "🏠", "Dashboard"),
+            ("record_sale",    "🛒", "Record Sale"),
+            ("sales_history",  "📋", "Sales History"),
+            ("products",       "📦", "Products"),
+            ("expenses",       "💸", "Expenses"),
+            ("insights",       "🧠", "Insights"),
         ]
         if is_admin:
             nav_items.append(("admin", "🛡️", "Admin Panel"))
@@ -3497,6 +3874,7 @@ def main():
 
     if   page == "dashboard":        page_dashboard()
     elif page == "record_sale":      page_record_sale()
+    elif page == "sales_history":    page_sales_history()
     elif page == "products":         page_products()
     elif page == "expenses":         page_expenses()
     elif page == "insights":         page_insights()
