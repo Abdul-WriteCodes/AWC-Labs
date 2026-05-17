@@ -3169,7 +3169,7 @@ def page_admin():
                                 ok = db_update(TBL_USERS, "user_id", u["user_id"], {
                                         "password_hash":            hashed,
                                         "password_reset_requested": "no",
-                                        "reset_requested_at":       "",
+                                        "reset_requested_at":       None,
                                         "must_change_password":     "yes",
                                     })
                                 st.cache_data.clear()
@@ -3192,7 +3192,7 @@ def page_admin():
                         with col3:
                             if st.button("✖ Dismiss", key=f"dismis_{u['user_id']}"):
                                 db_update(TBL_USERS, "user_id", u["user_id"], {"password_reset_requested": "no",
-                                     "reset_requested_at": ""})
+                                     "reset_requested_at": None})
                                 st.cache_data.clear()
                                 st.rerun()
                     st.markdown("---")
