@@ -625,40 +625,86 @@ border-top:1px solid #1F2D3D; margin-top:1rem;
 
 def inject_sidebar_toggle():
     """
-    Forces Streamlit's native sidebar toggle to remain visible and functional.
-    We do NOT inject a competing custom button — the native toggle is already
-    restored via CSS. This function is kept for backward compatibility.
+    Hides Streamlit's native sidebar toggle (which renders a raw Material icon
+    name on some mobile browsers) and replaces it with a clean SVG chevron button.
     """
     st.markdown("""
+<style>
+/* Hide Streamlit's native toggle button that shows raw icon text on mobile */
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarToggle"],
+[data-testid="stSidebarToggleButton"],
+button[aria-label="Open sidebar"],
+button[aria-label="Close sidebar"],
+button[aria-label="collapse sidebar"],
+button[aria-label="expand sidebar"] {
+display: none !important;
+}
+/* Custom sidebar toggle tab */
+#bpSidebarTab {
+position: fixed;
+top: 50vh;
+left: 0;
+transform: translateY(-50%);
+z-index: 999999;
+background: #111827;
+border: 1px solid #2D3F55;
+border-left: none;
+border-radius: 0 10px 10px 0;
+padding: 0.65rem 0.5rem;
+cursor: pointer;
+box-shadow: 4px 0 16px rgba(0,0,0,0.5);
+display: flex;
+align-items: center;
+justify-content: center;
+transition: background 0.15s, border-color 0.15s;
+}
+#bpSidebarTab:hover { background: #1A2332; border-color: #F5A623; }
+#bpSidebarTab svg { width: 20px; height: 20px; }
+</style>
+<div id="bpSidebarTab" title="Toggle sidebar">
+<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<polyline points="15 18 9 12 15 6" stroke="#F5A623" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</div>
 <script>
 (function() {
-// Ensure Streamlit's own sidebar toggle button stays visible.
-// We find it by every known selector and force visibility.
-function ensureToggleVisible() {
+var tab = document.getElementById("bpSidebarTab");
+if (!tab) return;
+function getSidebarState() {
+var sb = document.querySelector('[data-testid="stSidebar"]');
+if (!sb) return "closed";
+var rect = sb.getBoundingClientRect();
+return rect.left >= 0 && rect.width > 50 ? "open" : "closed";
+}
+function updateIcon(state) {
+var svg = tab.querySelector("svg polyline");
+if (!svg) return;
+// Chevron right when closed (to open), chevron left when open (to close)
+svg.setAttribute("points", state === "open" ? "15 18 9 12 15 6" : "9 18 15 12 9 6");
+}
+function clickNativeToggle() {
 var selectors = [
-'[data-testid="collapsedControl"]',
+'[data-testid="collapsedControl"] button',
 '[data-testid="stSidebarCollapsedControl"]',
 '[data-testid="stSidebarToggle"]',
-'[data-testid="stSidebarToggleButton"]',
 'button[aria-label="Open sidebar"]',
 'button[aria-label="Close sidebar"]',
 'button[aria-label="collapse sidebar"]',
 'button[aria-label="expand sidebar"]'
 ];
-selectors.forEach(function(sel) {
-var el = document.querySelector(sel);
-if (el) {
-el.style.display    = '';
-el.style.visibility = 'visible';
-el.style.opacity    = '1';
-el.style.pointerEvents = 'auto';
+for (var i = 0; i < selectors.length; i++) {
+var el = document.querySelector(selectors[i]);
+if (el) { el.style.display = ""; el.click(); return; }
 }
+}
+tab.addEventListener("click", function() {
+clickNativeToggle();
+setTimeout(function() { updateIcon(getSidebarState()); }, 300);
 });
-}
-// Run immediately and after a short delay to catch late mounts
-ensureToggleVisible();
-setTimeout(ensureToggleVisible, 500);
-setTimeout(ensureToggleVisible, 1500);
+// Sync icon on load
+setTimeout(function() { updateIcon(getSidebarState()); }, 800);
 })();
 </script>
     """, unsafe_allow_html=True)
