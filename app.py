@@ -1907,7 +1907,8 @@ Here's your business snapshot for
 
 # ─────────────────────────────────────────────
 #  PAGE: RECORD SALE
-# ───────────────def page_record_sale():
+# ─────────────────────────────────────────────
+def page_record_sale():
     user        = st.session_state.user
     business_id = user["business_id"]
 
