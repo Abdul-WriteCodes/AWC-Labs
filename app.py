@@ -88,23 +88,48 @@ def inject_styles():
         color: var(--text-primary);
     }
     #MainMenu, footer { visibility: hidden; }
-    /* Keep header visible so sidebar toggle arrow works */
-    header { visibility: visible; background: transparent !important; }
-    header [data-testid="stToolbar"] { visibility: hidden; }
-    /* Sidebar toggle button always visible */
-    [data-testid="collapsedControl"] {
+
+    /* ── Header: keep transparent but never hidden (toggle lives here) ── */
+    header,
+    [data-testid="stHeader"] {
+        visibility: visible !important;
+        background: transparent !important;
+        pointer-events: none;           /* clicks pass through the empty header */
+    }
+    /* Hide only the toolbar icons inside the header */
+    header [data-testid="stToolbar"],
+    [data-testid="stHeader"] [data-testid="stToolbar"] {
+        visibility: hidden !important;
+    }
+
+    /* ── Sidebar toggle — always visible, always clickable ── */
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapsedControl"] {
         display: flex !important;
         visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        position: fixed !important;
+        top: 50vh !important;
+        left: 0 !important;
+        z-index: 99999 !important;
         background: #111827 !important;
-        border: 1px solid #1F2D3D !important;
+        border: 1px solid #2D3F55 !important;
+        border-left: none !important;
         border-radius: 0 10px 10px 0 !important;
-        color: #F5A623 !important;
-        top: 50% !important;
-        z-index: 999 !important;
+        padding: 0.5rem 0.35rem !important;
+        box-shadow: 4px 0 12px rgba(0,0,0,0.4) !important;
+        transition: background 0.15s, border-color 0.15s !important;
     }
-    [data-testid="collapsedControl"]:hover {
+    [data-testid="collapsedControl"]:hover,
+    [data-testid="stSidebarCollapsedControl"]:hover {
         background: #1A2332 !important;
         border-color: #F5A623 !important;
+    }
+    [data-testid="collapsedControl"] svg,
+    [data-testid="stSidebarCollapsedControl"] svg {
+        color: #F5A623 !important;
+        fill: #F5A623 !important;
     }
     .block-container {
         padding-top: 1.5rem !important;
@@ -1232,10 +1257,14 @@ def page_login():
         """, unsafe_allow_html=True)
 
     with right:
+        # ── Card wrapper: fully self-contained, no unclosed tags ──
+        # Streamlit renders each st.markdown call in isolation; any div opened
+        # here MUST be closed in the same call, otherwise the browser receives
+        # broken HTML which makes Streamlit fall back to showing raw source.
         st.markdown("""
         <div style="
             background:#111827;border:1px solid #2D3F55;
-            border-radius:20px;padding:1.75rem 1.5rem 1rem 1.5rem;
+            border-radius:20px;padding:1.75rem 1.5rem 0.25rem 1.5rem;
             box-shadow:0 32px 80px rgba(0,0,0,0.7);
             margin-top:1rem;
         ">
@@ -1245,7 +1274,7 @@ def page_login():
                 color:#F0F4F8;letter-spacing:-0.03em;
                 margin-bottom:0.2rem;
             ">Welcome back</div>
-            <div style="font-size:0.82rem;color:#4A6080;margin-bottom:1.25rem;">
+            <div style="font-size:0.82rem;color:#4A6080;margin-bottom:0.1rem;">
                 Sign in to your business dashboard
             </div>
         </div>
@@ -1287,8 +1316,9 @@ def page_login():
                 st.session_state.current_page = "signup"
                 st.rerun()
 
+        # Self-contained footer block — no open tags
         st.markdown("""
-        <div style="margin-top:1.25rem;padding-top:1rem;
+        <div style="margin-top:1rem;padding-top:0.875rem;
                     border-top:1px solid #1F2D3D;text-align:center;">
             <div style="font-size:0.7rem;color:#4A6080;">
                 🔒 256-bit encrypted · Your data is never shared
