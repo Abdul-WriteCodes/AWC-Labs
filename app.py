@@ -1745,72 +1745,31 @@ Here's your business snapshot for
         expenses_df = get_expenses_df(business_id)
         kpis        = compute_kpis(sales_df, expenses_df)
 
-    # ── KPI Row 1 ──
+    # ── 4 Core KPIs ──
+    if not products_df.empty:
+        low_count = len(products_df[
+            products_df["stock_quantity"] <= products_df["reorder_level"]
+        ])
+    else:
+        low_count = 0
+
+    growth = kpis["week_growth"]
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         kpi_card("Today's Revenue", fmt_naira(kpis["today_revenue"]),
                  f"{kpis['today_txn']} transactions today")
     with c2:
-        growth = kpis["week_growth"]
         kpi_card("This Week", fmt_naira(kpis["week_revenue"]),
-                 f"{'▲' if growth >= 0 else '▼'} {abs(growth):.1f}% vs last week",
+                 f"{'\u25b2' if growth >= 0 else '\u25bc'} {abs(growth):.1f}% vs last week",
                  positive=(growth >= 0))
     with c3:
-        kpi_card("This Month", fmt_naira(kpis["month_revenue"]),
-                 f"{kpis['month_txn']} transactions")
-    with c4:
         kpi_card("Net Profit (Month)", fmt_naira(kpis["net_profit"]),
-                 f"After ₦{kpis['month_expenses']:,.0f} expenses",
+                 f"After \u20a6{kpis['month_expenses']:,.0f} expenses",
                  positive=(kpis["net_profit"] >= 0))
-
-    # ── KPI Row 2 ──
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        kpi_card("Today's Profit", fmt_naira(kpis["today_profit"]), "Gross margin today")
-    with c2:
-        kpi_card("Week Profit", fmt_naira(kpis["week_profit"]), "Gross margin this week")
-    with c3:
-        total_products = len(products_df) if not products_df.empty else 0
-        kpi_card("Products", str(total_products), "Active in inventory")
     with c4:
-        if not products_df.empty:
-            low_count = len(products_df[
-                products_df["stock_quantity"] <= products_df["reorder_level"]
-            ])
-        else:
-            low_count = 0
         kpi_card("Low Stock Alerts", str(low_count),
-                 "Products need restocking",
+                 "Products need restocking" if low_count > 0 else "All products stocked",
                  positive=(low_count == 0))
-
-    # ── KPI Row 3: Year, All-time, Avg Daily ──
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        kpi_card(
-            f"This Year ({datetime.now().year})",
-            fmt_naira(kpis["year_revenue"]),
-            f"{kpis['year_txn']} transactions YTD",
-        )
-    with c2:
-        kpi_card(
-            "Year Profit",
-            fmt_naira(kpis["year_profit"]),
-            f"Gross profit {datetime.now().year}",
-            positive=(kpis["year_profit"] >= 0),
-        )
-    with c3:
-        kpi_card(
-            "All-Time Revenue",
-            fmt_naira(kpis["alltime_revenue"]),
-            f"{kpis['alltime_txn']} total transactions",
-        )
-    with c4:
-        kpi_card(
-            "Avg. Daily Revenue",
-            fmt_naira(kpis["avg_daily_revenue"]),
-            "Per active trading day",
-        )
-
     # ── Charts ──
     if not sales_df.empty:
         col_left, col_right = st.columns([3, 2])
