@@ -2305,27 +2305,35 @@ Here's your business snapshot for
             except ImportError:
                 st.warning("Install reportlab for PDF receipts: pip install reportlab")
 
-        # ── Today's Sales sidebar ──
-        st.markdown("---")
-        section_header("Today\'s Sales")
+
+
+    # ── Today's Sales (outside col2, always visible) ──
+    st.markdown('---')
+    section_header("Today's Sales")
+    try:
         sales_df_today = get_sales_df(business_id)
         if not sales_df_today.empty:
-            today = datetime.now().date()
-            today_sales = sales_df_today[sales_df_today["sale_date"].dt.date == today]
+            sales_df_today['sale_date'] = pd.to_datetime(
+                sales_df_today['sale_date'], errors='coerce', utc=True
+            ).dt.tz_localize(None)
+            sales_df_today = sales_df_today.dropna(subset=['sale_date'])
+            today       = datetime.now().date()
+            today_sales = sales_df_today[sales_df_today['sale_date'].dt.date == today]
             kpi_card("Today's Revenue",
-                     fmt_naira(today_sales["total_amount"].sum()),
-                     f"{len(today_sales)} transactions")
-
+                     fmt_naira(today_sales['total_amount'].sum()),
+                     f"{len(today_sales)} transactions today")
             if not today_sales.empty:
-                st.markdown("**Recent transactions:**")
-                recent = today_sales.sort_values("sale_date", ascending=False).head(5)
+                st.markdown('**Recent transactions:**')
+                recent = today_sales.sort_values('sale_date', ascending=False).head(5)
                 for _, r in recent.iterrows():
                     st.markdown(
-                        f"\u2022 **{r['product_name']}** "
+                        f"• **{r['product_name']}** "
                         f"= {fmt_naira(r['total_amount'])} _{r['payment_method']}_"
                     )
         else:
             kpi_card("Today's Revenue", "₦0.00", "No sales yet today")
+    except Exception:
+        st.info('No sales data yet.')
 
 
 
