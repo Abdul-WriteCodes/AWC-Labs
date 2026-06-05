@@ -1,0 +1,431 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SaaStregy — Playbooks for Builders, Founders & Future Tech Professionals</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+    --bg:#0a0a0a;
+    --card:#121212;
+    --text:#f4f4f4;
+    --muted:#9a9a9a;
+    --accent:#ffb703;
+    --border:#222;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Inter',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.6;
+}
+
+.container{
+    width:min(1200px,92%);
+    margin:auto;
+}
+
+nav{
+    padding:24px 0;
+    border-bottom:1px solid var(--border);
+}
+
+.nav-wrapper{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    font-family:'Permanent Marker',cursive;
+    font-size:1.8rem;
+    color:var(--accent);
+    transform:rotate(-2deg);
+}
+
+.nav-links{
+    display:flex;
+    gap:30px;
+}
+
+.nav-links a{
+    text-decoration:none;
+    color:var(--text);
+    font-size:.95rem;
+}
+
+.btn{
+    display:inline-block;
+    padding:14px 24px;
+    border-radius:12px;
+    text-decoration:none;
+    font-weight:600;
+    transition:.3s;
+}
+
+.btn-primary{
+    background:var(--accent);
+    color:black;
+}
+
+.btn-primary:hover{
+    transform:translateY(-2px);
+}
+
+.btn-secondary{
+    border:1px solid #333;
+    color:white;
+}
+
+.hero{
+    padding:110px 0 80px;
+    text-align:center;
+}
+
+.hero-tag{
+    color:var(--accent);
+    font-weight:700;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-bottom:18px;
+}
+
+.hero h1{
+    font-size:clamp(3rem,7vw,6rem);
+    line-height:1;
+    margin-bottom:24px;
+    font-family:'Permanent Marker',cursive;
+    transform:rotate(-1deg);
+}
+
+.hero p{
+    max-width:760px;
+    margin:auto;
+    color:var(--muted);
+    font-size:1.1rem;
+}
+
+.hero-buttons{
+    margin-top:40px;
+    display:flex;
+    justify-content:center;
+    gap:16px;
+    flex-wrap:wrap;
+}
+
+.section{
+    padding:90px 0;
+}
+
+.section-title{
+    font-size:2.4rem;
+    margin-bottom:50px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:24px;
+}
+
+.card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:30px;
+    transition:.3s;
+}
+
+.card:hover{
+    transform:translateY(-6px);
+    border-color:var(--accent);
+}
+
+.card h3{
+    margin-bottom:12px;
+}
+
+.card p{
+    color:var(--muted);
+    margin-bottom:18px;
+}
+
+.price{
+    font-size:1.5rem;
+    font-weight:800;
+    color:var(--accent);
+}
+
+.why{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:60px;
+    align-items:center;
+}
+
+.graffiti-box{
+    border:2px dashed var(--accent);
+    border-radius:24px;
+    padding:40px;
+    font-family:'Permanent Marker',cursive;
+    font-size:2rem;
+    line-height:1.4;
+    transform:rotate(-1deg);
+}
+
+.about{
+    display:grid;
+    grid-template-columns:250px 1fr;
+    gap:50px;
+    align-items:center;
+}
+
+.avatar{
+    width:250px;
+    height:250px;
+    border-radius:24px;
+    background:linear-gradient(135deg,#ffb703,#ff8f00);
+}
+
+.newsletter{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:60px;
+    text-align:center;
+}
+
+.newsletter p{
+    color:var(--muted);
+    max-width:650px;
+    margin:20px auto;
+}
+
+.newsletter form{
+    margin-top:25px;
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+input{
+    padding:15px 20px;
+    min-width:320px;
+    border:none;
+    border-radius:12px;
+    background:#1d1d1d;
+    color:white;
+}
+
+footer{
+    padding:50px 0;
+    text-align:center;
+    color:var(--muted);
+    border-top:1px solid var(--border);
+}
+
+@media(max-width:768px){
+
+.nav-links{
+    display:none;
+}
+
+.why,
+.about{
+    grid-template-columns:1fr;
+}
+
+.hero{
+    padding-top:70px;
+}
+
+.newsletter{
+    padding:40px 25px;
+}
+
+input{
+    min-width:100%;
+}
+
+}
+</style>
+</head>
+<body>
+
+<nav>
+<div class="container nav-wrapper">
+
+<div class="logo">SaaStregy</div>
+
+<div class="nav-links">
+<a href="#">Books</a>
+<a href="#">Playbooks</a>
+<a href="#">Prints</a>
+<a href="#">About</a>
+<a href="#">Newsletter</a>
+</div>
+
+<a href="#" class="btn btn-primary">Shop Collection</a>
+
+</div>
+</nav>
+
+<section class="hero">
+<div class="container">
+
+<div class="hero-tag">
+Built for Builders
+</div>
+
+<h1>SAASTREGY</h1>
+
+<p>
+Playbooks for Builders, Founders & Future Tech Professionals.
+Practical systems, frameworks and lessons from real projects,
+real launches and real experiments.
+</p>
+
+<div class="hero-buttons">
+<a href="#" class="btn btn-primary">Explore Library</a>
+<a href="#" class="btn btn-secondary">Read Free Guides</a>
+</div>
+
+</div>
+</section>
+
+<section class="section">
+<div class="container">
+
+<h2 class="section-title">Featured Playbooks</h2>
+
+<div class="grid">
+
+<div class="card">
+<h3>AI Career Launch</h3>
+<p>
+A practical roadmap for breaking into technology and AI.
+</p>
+<div class="price">£19</div>
+</div>
+
+<div class="card">
+<h3>Bootstrap Founder Playbook</h3>
+<p>
+Build products with limited resources and maximum leverage.
+</p>
+<div class="price">£29</div>
+</div>
+
+<div class="card">
+<h3>SaaS Growth Blueprint</h3>
+<p>
+Validation, launch, traction and growth strategies.
+</p>
+<div class="price">£39</div>
+</div>
+
+</div>
+
+</div>
+</section>
+
+<section class="section">
+<div class="container why">
+
+<div>
+<h2 class="section-title">Why SaaStregy?</h2>
+
+<p style="color:var(--muted);font-size:1.1rem;">
+No fake guru tactics.
+No recycled content.
+
+Just practical frameworks, documented lessons and
+battle-tested strategies from building products,
+launching projects and navigating modern tech careers.
+</p>
+
+</div>
+
+<div class="graffiti-box">
+Build.<br>
+Launch.<br>
+Learn.<br>
+Repeat.
+</div>
+
+</div>
+</section>
+
+<section class="section">
+<div class="container about">
+
+<div class="avatar"></div>
+
+<div>
+<h2 class="section-title">Meet The Builder</h2>
+
+<p style="color:var(--muted);">
+I'm Abdul-Azeez Olohunjuwon.
+
+Bootstrap founder, SaaS builder and writer sharing what I learn while building products, launching experiments and navigating technology.
+
+Everything here is designed to shorten your learning curve.
+</p>
+
+</div>
+
+</div>
+</section>
+
+<section class="section">
+<div class="container">
+
+<div class="newsletter">
+
+<h2>The Builder's Dispatch</h2>
+
+<p>
+Weekly insights on SaaS, AI, bootstrapping,
+product building and technology careers.
+Join builders who want practical knowledge.
+</p>
+
+<form>
+<input type="email" placeholder="Enter your email">
+<button class="btn btn-primary">
+Subscribe
+</button>
+</form>
+
+</div>
+
+</div>
+</section>
+
+<footer>
+<div class="container">
+© 2026 SaaStregy — Built for builders.
+</div>
+</footer>
+
+</body>
+</html>
+```
+
