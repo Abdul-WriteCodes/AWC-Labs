@@ -142,7 +142,7 @@ nav{
 
 .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    grid-template-columns:1fr;
     gap:24px;
 }
 
@@ -150,28 +150,92 @@ nav{
     background:var(--card);
     border:1px solid var(--border);
     border-radius:20px;
-    padding:30px;
+    overflow:hidden;
+    display:grid;
+    grid-template-columns:280px 1fr;
     transition:.3s;
 }
 
 .card:hover{
-    transform:translateY(-6px);
+    transform:translateY(-4px);
     border-color:var(--accent);
+    box-shadow:0 16px 40px rgba(255,183,3,.1);
 }
 
-.card h3{
-    margin-bottom:12px;
+.card-image{
+    position:relative;
+    overflow:hidden;
+    min-height:260px;
 }
 
-.card p{
+.card-image img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    transition:.4s ease;
+}
+
+.card:hover .card-image img{
+    transform:scale(1.04);
+}
+
+.card-body{
+    padding:32px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+
+.card-body h3{
+    font-size:1.3rem;
+    margin-bottom:10px;
+}
+
+.card-body p{
     color:var(--muted);
-    margin-bottom:18px;
+    margin-bottom:20px;
+    flex-grow:1;
+}
+
+.card-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
 }
 
 .price{
-    font-size:1.5rem;
+    font-size:1.6rem;
     font-weight:800;
     color:var(--accent);
+}
+
+.btn-buy{
+    background:var(--accent);
+    color:black;
+    padding:12px 22px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:700;
+    font-size:.9rem;
+    transition:.3s;
+    white-space:nowrap;
+}
+
+.btn-buy:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(255,183,3,.3);
+}
+
+@media(max-width:680px){
+.card{
+    grid-template-columns:1fr;
+}
+.card-image{
+    min-height:200px;
+}
 }
 
 .why{
@@ -344,27 +408,51 @@ for launching your career, validating ideas, building products and growing start
 <div class="grid">
 
 <div class="card">
-<h3>Enter AI</h3>
-<p>
-A Comprehensive Guide for Anyone for Launching Successful AI Career
-</p>
-<div class="price">£19</div>
+    <div class="card-image">
+        <img src="assets/ai-career-launch.jpg" alt="AI Career Launch Playbook">
+    </div>
+    <div class="card-body">
+        <div>
+            <h3>AI Career Launch</h3>
+            <p>A practical roadmap for breaking into technology and AI — no CS degree required. Real steps, real tools, real opportunities.</p>
+        </div>
+        <div class="card-footer">
+            <div class="price">£19</div>
+            <a href="YOUR_PAYMENT_LINK_HERE" class="btn-buy">Get Playbook →</a>
+        </div>
+    </div>
 </div>
 
 <div class="card">
-<h3>Bootstrap Founder Playbook</h3>
-<p>
-Build products with limited resources and maximum leverage.
-</p>
-<div class="price">£29</div>
+    <div class="card-image">
+        <img src="assets/bootstrap-founder.jpg" alt="Bootstrap Founder Playbook">
+    </div>
+    <div class="card-body">
+        <div>
+            <h3>Bootstrap Founder Playbook</h3>
+            <p>Build products with limited resources and maximum leverage. Frameworks for shipping fast, staying lean and finding your first customers.</p>
+        </div>
+        <div class="card-footer">
+            <div class="price">£29</div>
+            <a href="YOUR_PAYMENT_LINK_HERE" class="btn-buy">Get Playbook →</a>
+        </div>
+    </div>
 </div>
 
 <div class="card">
-<h3>SaaS Growth Blueprint</h3>
-<p>
-Validation, launch, traction and growth strategies.
-</p>
-<div class="price">£39</div>
+    <div class="card-image">
+        <img src="assets/saas-growth-blueprint.jpg" alt="SaaS Growth Blueprint">
+    </div>
+    <div class="card-body">
+        <div>
+            <h3>SaaS Growth Blueprint</h3>
+            <p>Validation, launch, traction and growth strategies for SaaS builders. From zero users to sustainable MRR — documented and repeatable.</p>
+        </div>
+        <div class="card-footer">
+            <div class="price">£39</div>
+            <a href="YOUR_PAYMENT_LINK_HERE" class="btn-buy">Get Playbook →</a>
+        </div>
+    </div>
 </div>
 
 </div>
@@ -436,12 +524,7 @@ product building and technology careers.
 Join builders who want practical knowledge.
 </p>
 
-<form>
-<input type="email" placeholder="Enter your email">
-<button class="btn btn-primary">
-Subscribe
-</button>
-</form>
+<a href="mailto:Abdulwrite77@gmail.com?subject=Subscribe me to The Builder's Dispatch" class="btn btn-primary" style="margin-top:25px;display:inline-block;">Subscribe via Email</a>
 
 </div>
 
@@ -460,6 +543,3 @@ Subscribe
 
 </body>
 </html>
-
-
-
