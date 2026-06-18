@@ -365,6 +365,95 @@ input{
 }
 
 }
+
+/* ── Testimonial Carousel ── */
+.carousel-wrapper{
+    position:relative;
+    margin-top:32px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:20px;
+}
+
+.carousel-track-container{
+    width:100%;
+    max-width:520px;
+    overflow:hidden;
+    border-radius:20px;
+}
+
+.carousel-track{
+    display:flex;
+    transition:transform .4s ease;
+    will-change:transform;
+}
+
+.carousel-slide{
+    min-width:100%;
+}
+
+.carousel-slide img{
+    width:100%;
+    display:block;
+    border-radius:20px;
+    border:1px solid var(--border);
+    user-select:none;
+    -webkit-user-drag:none;
+}
+
+.carousel-arrow{
+    position:absolute;
+    top:50%;
+    transform:translateY(-60%);
+    background:rgba(255,183,3,.15);
+    border:1px solid var(--accent);
+    color:var(--accent);
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    font-size:1.1rem;
+    cursor:pointer;
+    transition:.3s;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.carousel-arrow:hover{
+    background:var(--accent);
+    color:black;
+}
+
+.carousel-prev{ left:0; }
+.carousel-next{ right:0; }
+
+.carousel-dots{
+    display:flex;
+    gap:8px;
+}
+
+.dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#333;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.dot.active{
+    background:var(--accent);
+    width:24px;
+    border-radius:999px;
+}
+
+@media(max-width:600px){
+    .carousel-prev{ left:-4px; }
+    .carousel-next{ right:-4px; }
+}
+
 </style>
 </head>
 <body>
@@ -477,14 +566,32 @@ for launching your career, validating ideas, building products and growing start
 <section class="section" style="padding-top:0;">
 <div class="container" style="text-align:center;">
 
-<span class="badge">Impact-driven Results & Testimonials</span>
+<span class="badge">Real Results</span>
 
-<div style="margin-top:32px;">
-    <img 
-        src="assets/Test2.jpeg" 
-        alt="Real messages from Enter AI readers"
-        style="max-width:520px;width:100%;border-radius:20px;border:1px solid var(--border);"
-    >
+<div class="carousel-wrapper">
+
+    <button class="carousel-arrow carousel-prev" aria-label="Previous">&#8592;</button>
+
+    <div class="carousel-track-container">
+        <div class="carousel-track">
+            <div class="carousel-slide"><img src="assets/Test1.jpg" alt="Reader testimonial 1"></div>
+            <div class="carousel-slide"><img src="assets/Test2.jpg" alt="Reader testimonial 2"></div>
+            <div class="carousel-slide"><img src="assets/Test3.jpg" alt="Reader testimonial 3"></div>
+            <div class="carousel-slide"><img src="assets/Test4.jpg" alt="Reader testimonial 4"></div>
+            <div class="carousel-slide"><img src="assets/Test5.jpg" alt="Reader testimonial 5"></div>
+        </div>
+    </div>
+
+    <button class="carousel-arrow carousel-next" aria-label="Next">&#8594;</button>
+
+    <div class="carousel-dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+    </div>
+
 </div>
 
 </div>
@@ -570,6 +677,47 @@ Join builders who want practical knowledge.
 © 2026 SaaStregy — Built for builders.
 </div>
 </footer>
+
+<script>
+(function(){
+    const track    = document.querySelector('.carousel-track');
+    const slides   = document.querySelectorAll('.carousel-slide');
+    const dots     = document.querySelectorAll('.dot');
+    const prev     = document.querySelector('.carousel-prev');
+    const next     = document.querySelector('.carousel-next');
+    const total    = slides.length;
+    let current    = 0;
+
+    function goTo(index){
+        current = (index + total) % total;
+        track.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((d,i) => d.classList.toggle('active', i === current));
+    }
+
+    prev.addEventListener('click', () => goTo(current - 1));
+    next.addEventListener('click', () => goTo(current + 1));
+    dots.forEach((d,i) => d.addEventListener('click', () => goTo(i)));
+
+    /* Touch/swipe */
+    let startX = 0;
+    track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
+    track.addEventListener('touchend',   e => {
+        const diff = startX - e.changedTouches[0].clientX;
+        if(Math.abs(diff) > 40) goTo(diff > 0 ? current + 1 : current - 1);
+    });
+
+    /* Mouse drag (desktop swipe) */
+    let mouseStartX = 0, isDragging = false;
+    track.addEventListener('mousedown',  e => { isDragging = true; mouseStartX = e.clientX; });
+    track.addEventListener('mouseup',    e => {
+        if(!isDragging) return;
+        isDragging = false;
+        const diff = mouseStartX - e.clientX;
+        if(Math.abs(diff) > 40) goTo(diff > 0 ? current + 1 : current - 1);
+    });
+    track.addEventListener('mouseleave', () => { isDragging = false; });
+})();
+</script>
 
 </body>
 </html>
