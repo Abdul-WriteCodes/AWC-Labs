@@ -138,9 +138,11 @@ def get_active_week() -> int:
 
 
 def set_active_week(week: int):
-    """Write active week to Settings sheet. Raises on failure so caller can show error."""
+    """Write active week to Settings sheet and bust the read cache. Raises on failure so caller can show error."""
     ws = get_sheet("Settings")
     ws.update(range_name="B1", values=[[week]])
+    # Bust the cached value so the next get_active_week() call returns the new week immediately.
+    get_active_week.clear()
 
 
 # ── Active week helper (no cache — always live) ────────────────
