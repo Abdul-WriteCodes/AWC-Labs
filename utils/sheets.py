@@ -24,14 +24,9 @@ def get_sheet(worksheet_name: str):
 
 # ── Payment Codes ──────────────────────────────────────────────
 
-@st.cache_data(ttl=30)
-def _get_all_codes() -> list[list]:
-    """Cached — refreshes every 30 seconds."""
-    return get_sheet(WS_CODES).get_all_values()
-
-
 def is_valid_code(code: str) -> bool:
-    all_values = _get_all_codes()
+    """Always reads live — called once at registration."""
+    all_values = get_sheet(WS_CODES).get_all_values()
     if not all_values:
         return False
     headers = [h.strip().lower() for h in all_values[0]]
@@ -65,15 +60,14 @@ def mark_code_used(code: str):
             row.append("")
         if row[code_col].strip().upper() == code.strip().upper():
             ws.update_cell(i, used_col + 1, "yes")
-            _get_all_codes.clear()  # Bust cache after write
             break
 
 
 # ── Participants ───────────────────────────────────────────────
 
-@st.cache_data(ttl=60)
-def _get_all_participants_cached() -> list[dict]:
-    """Cached — refreshes every 60 seconds."""
+@st.cache_data(ttl=120)
+def get_all_participants() -> list[dict]:
+    """Cached for admin view — 2 min TTL is fine."""
     return get_sheet(WS_PARTICIPANTS).get_all_records()
 
 
@@ -87,32 +81,24 @@ def register_participant(data: dict):
         data["payment_code"].upper(),
         data["registered_at"],
     ])
-    _get_all_participants_cached.clear()  # Bust cache after write
+    get_all_participants.clear()
     mark_code_used(data["payment_code"])
 
 
 def get_participant(email: str) -> dict | None:
-    records = _get_all_participants_cached()
+    """Always reads live — called only at login."""
+    records = get_sheet(WS_PARTICIPANTS).get_all_records()
     for row in records:
         if str(row.get("email", "")).strip().lower() == email.strip().lower():
             return row
     return None
 
 
-def get_all_participants() -> list[dict]:
-    return _get_all_participants_cached()
-
-
 # ── Progress ───────────────────────────────────────────────────
 
-@st.cache_data(ttl=30)
-def _get_all_progress_cached() -> list[dict]:
-    """Cached — refreshes every 30 seconds."""
-    return get_sheet(WS_PROGRESS).get_all_records()
-
-
-def get_progress(email: str) -> dict:
-    records = _get_all_progress_cached()
+def get_progress_from_sheet(email: str) -> dict:
+    """Always reads live from sheet. Used on first load per session."""
+    records = get_sheet(WS_PROGRESS).get_all_records()
     progress = {}
     for row in records:
         if str(row.get("email", "")).strip().lower() == email.strip().lower():
@@ -123,18 +109,26 @@ def get_progress(email: str) -> dict:
 
 
 def mark_task_done(email: str, week: int, task_index: int, completed_at: str):
+    """Write to sheet and update session state immediately."""
     get_sheet(WS_PROGRESS).append_row([email, week, task_index, completed_at])
-    _get_all_progress_cached.clear()  # Bust cache after write
+    # Update session state directly so UI reflects instantly without re-fetch
+    if "progress" not in st.session_state:
+        st.session_state["progress"] = {}
+    st.session_state["progress"].setdefault(week, [])
+    if task_index not in st.session_state["progress"][week]:
+        st.session_state["progress"][week].append(task_index)
 
 
+@st.cache_data(ttl=60)
 def get_all_progress() -> list[dict]:
-    return _get_all_progress_cached()
+    """Cached for admin view only."""
+    return get_sheet(WS_PROGRESS).get_all_records()
 
 
 # ── Active Week (admin-controlled) ────────────────────────────
 
-@st.cache_data(ttl=60)
 def get_active_week() -> int:
+    """Always reads live — critical for cohort control."""
     try:
         val = get_sheet("Settings").acell("B1").value
         return int(val) if val else 1
@@ -145,6 +139,5 @@ def get_active_week() -> int:
 def set_active_week(week: int):
     try:
         get_sheet("Settings").update("B1", week)
-        get_active_week.clear()  # Bust cache after write
     except Exception:
         pass
