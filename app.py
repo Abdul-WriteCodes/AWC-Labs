@@ -10,6 +10,14 @@ st.set_page_config(
     layout="centered",
 )
 
+# Hide Streamlit's auto-generated multi-page sidebar nav.
+# All routing is handled by app.py — the pages/ files are modules, not standalone pages.
+st.markdown("""
+    <style>
+        [data-testid="stSidebarNav"] { display: none; }
+    </style>
+""", unsafe_allow_html=True)
+
 from utils.auth import is_logged_in, is_admin
 import pages.register as register
 import pages.dashboard as dashboard
