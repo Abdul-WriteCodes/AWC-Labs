@@ -1,7 +1,10 @@
 import streamlit as st
 from datetime import datetime
 from utils.auth import get_current_participant, logout
-from utils.sheets import get_progress_from_sheet, mark_task_done, get_active_week_live
+from utils.sheets import (
+    get_progress_from_sheet, mark_task_done, get_active_week_live,
+    get_reflection, submit_reflection, get_feedback, get_prompt,
+)
 from data.content import PROGRAM_WEEKS, AI_CAREER_PATHS
 from config import PROGRAM_NAME, TOTAL_WEEKS
 import time
@@ -16,17 +19,19 @@ def get_progress(email: str) -> dict:
 
 
 def get_active_week_cached() -> int:
-    """
-    Check sheet every 60 seconds per session.
-    This way admin unlocks propagate to all users within 1 minute
-    without hammering the API on every rerun.
-    """
     now = time.time()
     last_check = st.session_state.get("active_week_last_check", 0)
     if now - last_check > 60 or "active_week" not in st.session_state:
         st.session_state["active_week"] = get_active_week_live()
         st.session_state["active_week_last_check"] = now
     return st.session_state["active_week"]
+
+
+def get_reflection_cached(email: str, week: int) -> dict | None:
+    key = f"reflection_{week}"
+    if key not in st.session_state:
+        st.session_state[key] = get_reflection(email, week)
+    return st.session_state[key]
 
 
 def show():
@@ -111,9 +116,49 @@ def show():
                     st.toast("Task marked complete!", icon="✅")
                     st.rerun()
 
-            # Week completion badge
-            if len(week_done) == len(week_data["tasks"]):
+            st.markdown("")
+            st.divider()
+
+            # ── Reflection ────────────────────────────────────
+            all_tasks_done = len(week_done) == len(week_data["tasks"])
+            reflection     = get_reflection_cached(email, week_num)
+
+            if not all_tasks_done:
+                st.info("✏️ Complete all tasks above to unlock this week's reflection.")
+            elif reflection:
                 st.success(f"✅ Week {week_num} complete! Great work, {first_name}.")
+                with st.expander("📝 Your reflection", expanded=False):
+                    st.markdown(reflection.get("response", ""))
+
+                # Feedback from admin
+                feedback = get_feedback(email, week_num)
+                if feedback:
+                    st.markdown("**Feedback from Abdul:**")
+                    st.info(feedback)
+            else:
+                # All tasks done but no reflection yet — show the prompt
+                prompt = get_prompt(week_num)
+                if prompt:
+                    st.markdown("**Weekly reflection**")
+                    st.markdown(f"_{prompt}_")
+                    response = st.text_area(
+                        "Your response",
+                        placeholder="Write your reflection here...",
+                        key=f"reflection_input_{week_num}",
+                        height=150,
+                    )
+                    if st.button("Submit reflection →", key=f"submit_reflection_{week_num}", type="primary"):
+                        if response.strip():
+                            submit_reflection(
+                                email, week_num, response.strip(),
+                                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            )
+                            st.toast("Reflection submitted!", icon="📝")
+                            st.rerun()
+                        else:
+                            st.warning("Please write something before submitting.")
+                else:
+                    st.success(f"✅ All tasks done! Reflection prompt coming soon.")
 
     st.divider()
 
@@ -126,7 +171,6 @@ def show():
             st.rerun()
     with col_r2:
         if st.button("🔄 Check for new weeks"):
-            # Force fresh active week check
             if "active_week" in st.session_state:
                 del st.session_state["active_week"]
             if "active_week_last_check" in st.session_state:
