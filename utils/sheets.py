@@ -18,7 +18,9 @@ def get_spreadsheet():
     return client.open_by_key(SPREADSHEET_ID)
 
 
+@st.cache_resource
 def get_sheet(worksheet_name: str):
+    """Cache worksheet objects — avoids metadata fetch on every call."""
     return get_spreadsheet().worksheet(worksheet_name)
 
 
