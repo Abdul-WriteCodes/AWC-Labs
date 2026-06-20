@@ -1,20 +1,32 @@
 import streamlit as st
 from datetime import datetime
 from utils.auth import get_current_participant, logout
-from utils.sheets import get_progress_from_sheet, mark_task_done, get_active_week
+from utils.sheets import get_progress_from_sheet, mark_task_done, get_active_week_live
 from data.content import PROGRAM_WEEKS, AI_CAREER_PATHS
 from config import PROGRAM_NAME, TOTAL_WEEKS
+import time
 
 
 def get_progress(email: str) -> dict:
-    """
-    Use session state as the source of truth.
-    Load from sheet once per session, then keep in memory.
-    """
+    """Load from sheet once per session, keep in memory after."""
     if "progress" not in st.session_state or st.session_state.get("progress_email") != email:
         st.session_state["progress"] = get_progress_from_sheet(email)
         st.session_state["progress_email"] = email
     return st.session_state["progress"]
+
+
+def get_active_week_cached() -> int:
+    """
+    Check sheet every 60 seconds per session.
+    This way admin unlocks propagate to all users within 1 minute
+    without hammering the API on every rerun.
+    """
+    now = time.time()
+    last_check = st.session_state.get("active_week_last_check", 0)
+    if now - last_check > 60 or "active_week" not in st.session_state:
+        st.session_state["active_week"] = get_active_week_live()
+        st.session_state["active_week_last_check"] = now
+    return st.session_state["active_week"]
 
 
 def show():
@@ -35,8 +47,7 @@ def show():
     st.divider()
 
     # ── Progress summary ──────────────────────────────────────
-    # active_week always live — admin can change it anytime
-    active_week = get_active_week()
+    active_week = get_active_week_cached()
     progress    = get_progress(email)
 
     total_tasks     = sum(len(PROGRAM_WEEKS[w]["tasks"]) for w in range(1, active_week + 1))
@@ -106,11 +117,21 @@ def show():
 
     st.divider()
 
-    # ── Refresh progress button ───────────────────────────────
-    if st.button("🔄 Refresh my progress"):
-        if "progress" in st.session_state:
-            del st.session_state["progress"]
-        st.rerun()
+    # ── Manual refresh ────────────────────────────────────────
+    col_r1, col_r2 = st.columns(2)
+    with col_r1:
+        if st.button("🔄 Refresh my progress"):
+            if "progress" in st.session_state:
+                del st.session_state["progress"]
+            st.rerun()
+    with col_r2:
+        if st.button("🔄 Check for new weeks"):
+            # Force fresh active week check
+            if "active_week" in st.session_state:
+                del st.session_state["active_week"]
+            if "active_week_last_check" in st.session_state:
+                del st.session_state["active_week_last_check"]
+            st.rerun()
 
     # ── AI Career Paths reference ─────────────────────────────
     with st.expander("AI career paths — quick reference"):
