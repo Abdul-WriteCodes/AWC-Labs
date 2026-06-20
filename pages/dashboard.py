@@ -1,9 +1,20 @@
 import streamlit as st
 from datetime import datetime
 from utils.auth import get_current_participant, logout
-from utils.sheets import get_progress, mark_task_done, get_active_week
+from utils.sheets import get_progress_from_sheet, mark_task_done, get_active_week
 from data.content import PROGRAM_WEEKS, AI_CAREER_PATHS
 from config import PROGRAM_NAME, TOTAL_WEEKS
+
+
+def get_progress(email: str) -> dict:
+    """
+    Use session state as the source of truth.
+    Load from sheet once per session, then keep in memory.
+    """
+    if "progress" not in st.session_state or st.session_state.get("progress_email") != email:
+        st.session_state["progress"] = get_progress_from_sheet(email)
+        st.session_state["progress_email"] = email
+    return st.session_state["progress"]
 
 
 def show():
@@ -24,6 +35,7 @@ def show():
     st.divider()
 
     # ── Progress summary ──────────────────────────────────────
+    # active_week always live — admin can change it anytime
     active_week = get_active_week()
     progress    = get_progress(email)
 
@@ -81,8 +93,11 @@ def show():
                         st.markdown(task)
 
                 if checked and not done:
-                    mark_task_done(email, week_num, idx, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                    st.toast(f"Task marked complete!", icon="✅")
+                    mark_task_done(
+                        email, week_num, idx,
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    )
+                    st.toast("Task marked complete!", icon="✅")
                     st.rerun()
 
             # Week completion badge
@@ -90,6 +105,12 @@ def show():
                 st.success(f"✅ Week {week_num} complete! Great work, {first_name}.")
 
     st.divider()
+
+    # ── Refresh progress button ───────────────────────────────
+    if st.button("🔄 Refresh my progress"):
+        if "progress" in st.session_state:
+            del st.session_state["progress"]
+        st.rerun()
 
     # ── AI Career Paths reference ─────────────────────────────
     with st.expander("AI career paths — quick reference"):
