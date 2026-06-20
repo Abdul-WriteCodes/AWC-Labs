@@ -143,3 +143,14 @@ def set_active_week(week: int):
         get_active_week.clear()
     except Exception:
         pass
+
+
+# ── Active week helper (no cache — always live) ────────────────
+
+def get_active_week_live() -> int:
+    """Always reads from sheet directly. No cache."""
+    try:
+        val = get_sheet("Settings").acell("B1").value
+        return int(val) if val else 1
+    except Exception:
+        return 1
