@@ -154,3 +154,94 @@ def get_active_week_live() -> int:
         return int(val) if val else 1
     except Exception:
         return 1
+
+
+# ── Prompts ────────────────────────────────────────────────────
+
+def get_prompt(week: int) -> str:
+    """Return the reflection prompt for a given week. Empty string if not set."""
+    try:
+        records = get_sheet("Prompts").get_all_records()
+        for row in records:
+            if int(row.get("week", 0)) == week:
+                return str(row.get("prompt", "")).strip()
+    except Exception:
+        pass
+    return ""
+
+
+def set_prompt(week: int, prompt: str):
+    """Upsert the reflection prompt for a week."""
+    ws = get_sheet("Prompts")
+    records = ws.get_all_records()
+    for i, row in enumerate(records, start=2):
+        if int(row.get("week", 0)) == week:
+            ws.update_cell(i, 2, prompt)
+            return
+    ws.append_row([week, prompt])
+
+
+# ── Reflections ────────────────────────────────────────────────
+
+def get_reflection(email: str, week: int) -> dict | None:
+    """Return the participant's reflection for a week, or None."""
+    try:
+        records = get_sheet("Reflections").get_all_records()
+        for row in records:
+            if (str(row.get("email", "")).strip().lower() == email.strip().lower()
+                    and int(row.get("week", 0)) == week):
+                return row
+    except Exception:
+        pass
+    return None
+
+
+def submit_reflection(email: str, week: int, response: str, submitted_at: str):
+    get_sheet("Reflections").append_row([email, week, response, submitted_at])
+    # Cache in session so UI updates immediately
+    key = f"reflection_{week}"
+    st.session_state[key] = {"email": email, "week": week, "response": response, "submitted_at": submitted_at, "feedback": ""}
+
+
+@st.cache_data(ttl=60)
+def get_all_reflections() -> list[dict]:
+    try:
+        return get_sheet("Reflections").get_all_records()
+    except Exception:
+        return []
+
+
+# ── Feedback ───────────────────────────────────────────────────
+
+def get_feedback(email: str, week: int) -> str:
+    """Return admin feedback for a participant's week reflection."""
+    try:
+        records = get_sheet("Feedback").get_all_records()
+        for row in records:
+            if (str(row.get("email", "")).strip().lower() == email.strip().lower()
+                    and int(row.get("week", 0)) == week):
+                return str(row.get("feedback", "")).strip()
+    except Exception:
+        pass
+    return ""
+
+
+def save_feedback(email: str, week: int, feedback: str, written_at: str):
+    """Upsert admin feedback for a participant + week."""
+    ws = get_sheet("Feedback")
+    records = ws.get_all_records()
+    for i, row in enumerate(records, start=2):
+        if (str(row.get("email", "")).strip().lower() == email.strip().lower()
+                and int(row.get("week", 0)) == week):
+            ws.update_cell(i, 3, feedback)
+            ws.update_cell(i, 4, written_at)
+            return
+    ws.append_row([email, week, feedback, written_at])
+
+
+@st.cache_data(ttl=60)
+def get_all_feedback() -> list[dict]:
+    try:
+        return get_sheet("Feedback").get_all_records()
+    except Exception:
+        return []
