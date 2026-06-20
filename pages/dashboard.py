@@ -57,7 +57,7 @@ def show():
 
     total_tasks     = sum(len(PROGRAM_WEEKS[w]["tasks"]) for w in range(1, active_week + 1))
     completed_tasks = sum(len(v) for v in progress.values())
-    pct             = int((completed_tasks / total_tasks * 100) if total_tasks else 0)
+    pct             = min(100, int((completed_tasks / total_tasks * 100) if total_tasks else 0))
 
     col_a, col_b, col_c = st.columns(3)
     col_a.metric("Current week", f"Week {active_week}")
