@@ -82,10 +82,9 @@ def register_participant(data: dict):
     mark_code_used(data["payment_code"])
 
 
-@st.cache_data(ttl=300)
 def get_participant_cached(email: str) -> dict | None:
-    """Cached per email — 5 min TTL. Used at login."""
-    records = get_sheet(WS_PARTICIPANTS).get_all_records()
+    """Reuses the get_all_participants cache — avoids a separate API call."""
+    records = get_all_participants()
     for row in records:
         if str(row.get("email", "")).strip().lower() == email.strip().lower():
             return row
