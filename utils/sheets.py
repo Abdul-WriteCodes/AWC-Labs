@@ -24,28 +24,27 @@ def get_sheet(worksheet_name: str):
 
 # ── Payment Codes ──────────────────────────────────────────────
 
+@st.cache_data(ttl=30)
+def _get_all_codes() -> list[list]:
+    """Cached — refreshes every 30 seconds."""
+    return get_sheet(WS_CODES).get_all_values()
+
+
 def is_valid_code(code: str) -> bool:
-    """Check if payment code exists and has not been used."""
-    ws = get_sheet(WS_CODES)
-    # Use get_all_values to avoid header type issues
-    all_values = ws.get_all_values()
+    all_values = _get_all_codes()
     if not all_values:
         return False
-
     headers = [h.strip().lower() for h in all_values[0]]
     try:
         code_col = headers.index("code")
         used_col = headers.index("used")
     except ValueError:
-        return False  # Headers not found
-
+        return False
     for row in all_values[1:]:
-        # Pad short rows
         while len(row) <= max(code_col, used_col):
             row.append("")
         if row[code_col].strip().upper() == code.strip().upper():
             used_val = row[used_col].strip().lower()
-            # Valid if used column is blank, "no", or "false"
             return used_val not in ("yes", "true", "1", "used")
     return False
 
@@ -55,23 +54,28 @@ def mark_code_used(code: str):
     all_values = ws.get_all_values()
     if not all_values:
         return
-
     headers = [h.strip().lower() for h in all_values[0]]
     try:
         code_col = headers.index("code")
         used_col = headers.index("used")
     except ValueError:
         return
-
     for i, row in enumerate(all_values[1:], start=2):
         while len(row) <= max(code_col, used_col):
             row.append("")
         if row[code_col].strip().upper() == code.strip().upper():
             ws.update_cell(i, used_col + 1, "yes")
+            _get_all_codes.clear()  # Bust cache after write
             break
 
 
 # ── Participants ───────────────────────────────────────────────
+
+@st.cache_data(ttl=60)
+def _get_all_participants_cached() -> list[dict]:
+    """Cached — refreshes every 60 seconds."""
+    return get_sheet(WS_PARTICIPANTS).get_all_records()
+
 
 def register_participant(data: dict):
     ws = get_sheet(WS_PARTICIPANTS)
@@ -83,12 +87,12 @@ def register_participant(data: dict):
         data["payment_code"].upper(),
         data["registered_at"],
     ])
+    _get_all_participants_cached.clear()  # Bust cache after write
     mark_code_used(data["payment_code"])
 
 
 def get_participant(email: str) -> dict | None:
-    ws = get_sheet(WS_PARTICIPANTS)
-    records = ws.get_all_records()
+    records = _get_all_participants_cached()
     for row in records:
         if str(row.get("email", "")).strip().lower() == email.strip().lower():
             return row
@@ -96,16 +100,19 @@ def get_participant(email: str) -> dict | None:
 
 
 def get_all_participants() -> list[dict]:
-    ws = get_sheet(WS_PARTICIPANTS)
-    return ws.get_all_records()
+    return _get_all_participants_cached()
 
 
 # ── Progress ───────────────────────────────────────────────────
 
+@st.cache_data(ttl=30)
+def _get_all_progress_cached() -> list[dict]:
+    """Cached — refreshes every 30 seconds."""
+    return get_sheet(WS_PROGRESS).get_all_records()
+
+
 def get_progress(email: str) -> dict:
-    """Returns {week: [task_indices_completed]} for a participant."""
-    ws = get_sheet(WS_PROGRESS)
-    records = ws.get_all_records()
+    records = _get_all_progress_cached()
     progress = {}
     for row in records:
         if str(row.get("email", "")).strip().lower() == email.strip().lower():
@@ -116,21 +123,20 @@ def get_progress(email: str) -> dict:
 
 
 def mark_task_done(email: str, week: int, task_index: int, completed_at: str):
-    ws = get_sheet(WS_PROGRESS)
-    ws.append_row([email, week, task_index, completed_at])
+    get_sheet(WS_PROGRESS).append_row([email, week, task_index, completed_at])
+    _get_all_progress_cached.clear()  # Bust cache after write
 
 
 def get_all_progress() -> list[dict]:
-    ws = get_sheet(WS_PROGRESS)
-    return ws.get_all_records()
+    return _get_all_progress_cached()
 
 
 # ── Active Week (admin-controlled) ────────────────────────────
 
+@st.cache_data(ttl=60)
 def get_active_week() -> int:
     try:
-        ws = get_sheet("Settings")
-        val = ws.acell("B1").value
+        val = get_sheet("Settings").acell("B1").value
         return int(val) if val else 1
     except Exception:
         return 1
@@ -138,7 +144,7 @@ def get_active_week() -> int:
 
 def set_active_week(week: int):
     try:
-        ws = get_sheet("Settings")
-        ws.update("B1", week)
+        get_sheet("Settings").update("B1", week)
+        get_active_week.clear()  # Bust cache after write
     except Exception:
         pass
