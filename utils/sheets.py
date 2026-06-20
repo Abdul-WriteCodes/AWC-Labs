@@ -9,23 +9,22 @@ SCOPES = [
 ]
 
 @st.cache_resource
-def get_client():
+def get_spreadsheet():
+    """Cache both the client AND the spreadsheet object — avoids open_by_key() on every call."""
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
     )
-    return gspread.authorize(creds)
+    client = gspread.authorize(creds)
+    return client.open_by_key(SPREADSHEET_ID)
 
 
 def get_sheet(worksheet_name: str):
-    client = get_client()
-    sh = client.open_by_key(SPREADSHEET_ID)
-    return sh.worksheet(worksheet_name)
+    return get_spreadsheet().worksheet(worksheet_name)
 
 
 # ── Payment Codes ──────────────────────────────────────────────
 
 def is_valid_code(code: str) -> bool:
-    """Always reads live — called once at registration."""
     all_values = get_sheet(WS_CODES).get_all_values()
     if not all_values:
         return False
@@ -67,13 +66,11 @@ def mark_code_used(code: str):
 
 @st.cache_data(ttl=120)
 def get_all_participants() -> list[dict]:
-    """Cached for admin view — 2 min TTL is fine."""
     return get_sheet(WS_PARTICIPANTS).get_all_records()
 
 
 def register_participant(data: dict):
-    ws = get_sheet(WS_PARTICIPANTS)
-    ws.append_row([
+    get_sheet(WS_PARTICIPANTS).append_row([
         data["full_name"],
         data["email"],
         data["phone"],
@@ -85,8 +82,9 @@ def register_participant(data: dict):
     mark_code_used(data["payment_code"])
 
 
-def get_participant(email: str) -> dict | None:
-    """Always reads live — called only at login."""
+@st.cache_data(ttl=300)
+def get_participant_cached(email: str) -> dict | None:
+    """Cached per email — 5 min TTL. Used at login."""
     records = get_sheet(WS_PARTICIPANTS).get_all_records()
     for row in records:
         if str(row.get("email", "")).strip().lower() == email.strip().lower():
@@ -94,10 +92,14 @@ def get_participant(email: str) -> dict | None:
     return None
 
 
+def get_participant(email: str) -> dict | None:
+    return get_participant_cached(email)
+
+
 # ── Progress ───────────────────────────────────────────────────
 
 def get_progress_from_sheet(email: str) -> dict:
-    """Always reads live from sheet. Used on first load per session."""
+    """Live read — called once per session on first dashboard load."""
     records = get_sheet(WS_PROGRESS).get_all_records()
     progress = {}
     for row in records:
@@ -109,9 +111,8 @@ def get_progress_from_sheet(email: str) -> dict:
 
 
 def mark_task_done(email: str, week: int, task_index: int, completed_at: str):
-    """Write to sheet and update session state immediately."""
     get_sheet(WS_PROGRESS).append_row([email, week, task_index, completed_at])
-    # Update session state directly so UI reflects instantly without re-fetch
+    # Update session state immediately so UI reflects without re-fetch
     if "progress" not in st.session_state:
         st.session_state["progress"] = {}
     st.session_state["progress"].setdefault(week, [])
@@ -121,14 +122,14 @@ def mark_task_done(email: str, week: int, task_index: int, completed_at: str):
 
 @st.cache_data(ttl=60)
 def get_all_progress() -> list[dict]:
-    """Cached for admin view only."""
     return get_sheet(WS_PROGRESS).get_all_records()
 
 
-# ── Active Week (admin-controlled) ────────────────────────────
+# ── Active Week ────────────────────────────────────────────────
 
+@st.cache_data(ttl=30)
 def get_active_week() -> int:
-    """Always reads live — critical for cohort control."""
+    """Short cache — admin changes reflect within 30 seconds."""
     try:
         val = get_sheet("Settings").acell("B1").value
         return int(val) if val else 1
@@ -139,5 +140,6 @@ def get_active_week() -> int:
 def set_active_week(week: int):
     try:
         get_sheet("Settings").update("B1", week)
+        get_active_week.clear()
     except Exception:
         pass
