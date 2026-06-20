@@ -27,28 +27,53 @@ def get_sheet(worksheet_name: str):
 def is_valid_code(code: str) -> bool:
     """Check if payment code exists and has not been used."""
     ws = get_sheet(WS_CODES)
-    records = ws.get_all_records()
-    for row in records:
-        if str(row.get("code", "")).strip().upper() == code.strip().upper():
-            return str(row.get("used", "")).strip().lower() != "yes"
+    # Use get_all_values to avoid header type issues
+    all_values = ws.get_all_values()
+    if not all_values:
+        return False
+
+    headers = [h.strip().lower() for h in all_values[0]]
+    try:
+        code_col = headers.index("code")
+        used_col = headers.index("used")
+    except ValueError:
+        return False  # Headers not found
+
+    for row in all_values[1:]:
+        # Pad short rows
+        while len(row) <= max(code_col, used_col):
+            row.append("")
+        if row[code_col].strip().upper() == code.strip().upper():
+            used_val = row[used_col].strip().lower()
+            # Valid if used column is blank, "no", or "false"
+            return used_val not in ("yes", "true", "1", "used")
     return False
 
 
 def mark_code_used(code: str):
     ws = get_sheet(WS_CODES)
-    records = ws.get_all_records()
-    for i, row in enumerate(records, start=2):  # row 1 = header
-        if str(row.get("code", "")).strip().upper() == code.strip().upper():
-            ws.update_cell(i, list(row.keys()).index("used") + 1, "yes")
+    all_values = ws.get_all_values()
+    if not all_values:
+        return
+
+    headers = [h.strip().lower() for h in all_values[0]]
+    try:
+        code_col = headers.index("code")
+        used_col = headers.index("used")
+    except ValueError:
+        return
+
+    for i, row in enumerate(all_values[1:], start=2):
+        while len(row) <= max(code_col, used_col):
+            row.append("")
+        if row[code_col].strip().upper() == code.strip().upper():
+            ws.update_cell(i, used_col + 1, "yes")
             break
 
 
 # ── Participants ───────────────────────────────────────────────
 
 def register_participant(data: dict):
-    """
-    data keys: full_name, email, phone, cohort_type, payment_code, registered_at
-    """
     ws = get_sheet(WS_PARTICIPANTS)
     ws.append_row([
         data["full_name"],
