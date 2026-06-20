@@ -79,7 +79,16 @@ def show():
         if st.button("Update active week", type="primary"):
             try:
                 set_active_week(new_week)
+                # Clear the admin session's own active-week cache so the
+                # Overview metric and tab_control info box reflect the new
+                # value immediately on the rerun below.
+                st.session_state.pop("active_week", None)
+                st.session_state.pop("active_week_last_check", None)
                 st.success(f"✅ Week {new_week} is now live for all participants.")
+                # Use st.rerun() inside a small delay so the success toast
+                # renders for at least one cycle before the page refreshes.
+                import time as _time
+                _time.sleep(0.8)
                 st.rerun()
             except Exception as e:
                 st.error(f"Failed to update: {e}")
