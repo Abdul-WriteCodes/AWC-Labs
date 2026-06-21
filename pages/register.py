@@ -100,7 +100,7 @@ def show():
           <div class="sp-avatars">{imgs_html}</div>
           <div class="sp-text">
             <strong></strong>
-            <span><span class="sp-dot"></span>Avtively Used by 100+ Builders</span>
+            <span><span class="sp-dot"></span><br>Actively Used by 100+ Builders</span>
           </div>
           
         </div>
