@@ -237,14 +237,39 @@ nav{
     grid-template-columns:1fr;
 }
 .card-image{
-    min-height:160px;
-    max-height:200px;
+    min-height:140px;
+    max-height:170px;
 }
 .card-body{
     padding:14px;
 }
 .card-body h3{
-    font-size:0.85rem;
+    font-size:0.95rem;
+    margin-bottom:6px;
+}
+.card-body p{
+    font-size:0.82rem;
+    margin-bottom:8px;
+}
+.card-footer{
+    margin-top:8px;
+}
+}
+
+/* ── 2-col bullet grid for program cards ── */
+.bullet-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px 12px;
+    margin:10px 0 14px;
+    font-size:0.82rem;
+    color:var(--muted);
+}
+
+@media(min-width:681px){
+.bullet-grid{
+    grid-template-columns:1fr;
+    font-size:0.9rem;
 }
 }
 
@@ -569,21 +594,16 @@ and real-world lessons to launch careers, build products, and grow startups.
 
     <div class="card-body">
         <div>
-            <h3>Enter AI Open Seminar</h3>
-
-            <p>
-            A free, live seminar for anyone ready to stop wondering about AI and start building with it
-            This is your first step into the Crea8it ecosystem — a practical, no-fluff session designed for students, graduates,
-            and career switchers who want to break into AI without a CS degree, without connections, and without wasting months figuring out where to start..
-
-            <br><br>
-            ✓ The AI career landscape — what's real, what's hype<br>
-            ✓ How to position yourself for AI roles in 2026<br>
-            ✓ Tools and workflows professionals are actually using<br>
-            ✓ Your roadmap from zero to your first AI opportunity<br>
-            ✓ Live Q&A — bring your real questions
- 
-            </p>
+            <h3>🎙️ Enter AI Open Seminar</h3>
+            <p>A free, live session for anyone ready to break into AI — no CS degree, no connections needed.</p>
+            <div class="bullet-grid">
+                <span>✓ AI career landscape</span>
+                <span>✓ Tools pros actually use</span>
+                <span>✓ Position yourself in 2026</span>
+                <span>✓ Your zero-to-hire roadmap</span>
+                <span>✓ Live Q&amp;A</span>
+                <span>✓ Entry: <em>Enter AI</em> book</span>
+            </div>
         </div>
 
         <div class="card-footer">
@@ -666,7 +686,6 @@ and real-world lessons to launch careers, build products, and grow startups.
     </div>
 </div>
 
-<div class="card">
 <div class="card">
     <div class="card-image">
         <img src="assets/T2M.jpeg" alt="Bootstrap Founder Playbook">
