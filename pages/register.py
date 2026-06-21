@@ -1,4 +1,5 @@
 import os
+import base64
 import streamlit as st
 from datetime import datetime
 
@@ -43,6 +44,7 @@ def show():
             return base64.b64encode(_f.read()).decode()
 
     _av = [_avatar_b64(f"user{i}.jpeg") for i in range(1, 7)]
+    
 
     st.html(f"""
     <div style="
