@@ -118,7 +118,7 @@ def show():
         st.markdown("<div style='height:20px;'></div>", unsafe_allow_html=True)
 
     # ── Registration & Login ───────────────────────────────
-    with st.expander("🔐 Registration & Login", expanded=False):
+    with st.expander("Get Started Here👇: Registration & Login 🔐", expanded=False):
 
         tab_register, tab_login = st.tabs(
             ["✦ New Registration", "→ Already Registered"]
@@ -132,7 +132,7 @@ def show():
             st.markdown("""
             <div class="alert-warn" style="margin:16px 0 20px;">
               <strong>How to join a Program:</strong>
-              Fill your biodata and the Program Registration Code→
+              Fill your biodata and the Program Registration Code
               issued to you and sign up to unlock your 6-week program.
             </div>
             """, unsafe_allow_html=True)
@@ -167,7 +167,7 @@ def show():
 
                 payment_code = st.text_input(
                     "Payment Code",
-                    placeholder="From your Enter AI purchase receipt"
+                    placeholder="Enter your program code"
                 )
 
                 submitted = st.form_submit_button(
