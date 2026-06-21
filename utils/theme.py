@@ -85,7 +85,6 @@ html, body, [class*="css"], .stApp {
 /* ── Hide Streamlit chrome ── */
 #MainMenu { visibility: hidden; }
 footer    { visibility: hidden; }
-header    { visibility: hidden; }
 .stDeployButton { display: none; }
 
 /* ── Buttons ── */
