@@ -99,8 +99,8 @@ def show():
         <div class="sp-wrap">
           <div class="sp-avatars">{imgs_html}</div>
           <div class="sp-text">
-            <strong>Early cohort members are in</strong>
-            <span><span class="sp-dot"></span>Join them — spots are limited</span>
+            <strong></strong>
+            <span><span class="sp-dot"></span>Avtively Used by 100+ Builders</span>
           </div>
           
         </div>
@@ -110,7 +110,8 @@ def show():
         
         <div style="font-size:11.5px;color:#6B7280;text-align:center;
               line-height:1.6;max-width:340px;">
-              Trusted by <span style="color:#D1D5DB;">Builders, Founders, and career aspirants</span> and more amazing businesses 🇳🇬.
+              Crea8it Labs continues to welcome hundreds of builders, tech founders, professionals, and tech career aspirants <span style="color:#FFD700;"> to build an idea,
+              startups, career aspirants</span> and more from scratch, with grit and resilience in the most Crea8it way.
         </div>
 
         """, unsafe_allow_html=True)
