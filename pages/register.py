@@ -106,20 +106,19 @@ def show():
         </div>
         """, unsafe_allow_html=True)
         
-        st.markdown(f"""
-        
-        <div style="font-size:11.5px;color:#6B7280;text-align:center;
-              line-height:1.6;max-width:340px;">
-              Crea8it Labs continues to welcome hundreds of builders, tech founders, professionals, and tech career aspirants <span style="color:#FFD700;"> to build an idea,
-              startups, career aspirants</span> and more from scratch, with grit and resilience in the most Crea8it way.
+        st.markdown("""
+        <div style="font-size:12px;color:#6B7280;text-align:center;
+              line-height:1.7;max-width:340px;margin:0 auto;">
+              Join the builders turning
+              <span style="color:#FFD700;">ideas into real products, careers, and startups</span>
+              — from scratch, with grit and resilience, in the most Crea8ive way.
         </div>
-
         """, unsafe_allow_html=True)
 
 
 
     # ── Registration & Login ───────────────────────────────
-    with st.expander("🔐 Registration & Login", expanded=False):
+    with st.expander("Get Started👇: Registration & Login 🔐", expanded=False):
 
         tab_register, tab_login = st.tabs(
             ["✦ New Registration", "→ Already Registered"]
