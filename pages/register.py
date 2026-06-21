@@ -20,7 +20,7 @@ def show():
     st.markdown("""
     <div class="lp-hero">
       <div class="lp-wordmark">
-        <span class="c8-gold">Crea8it</span>
+        <span class="c8--gold">Crea8it</span>
         <span class="c8-teal" style="color:#00B4D8;"> Labs</span>
       </div>
 
