@@ -132,9 +132,8 @@ def show():
             st.markdown("""
             <div class="alert-warn" style="margin:16px 0 20px;">
               <strong>How to join a Program:</strong>
-              Purchase <em>Enter AI</em> (₦5,000) →
-              receive your unique payment code →
-              enter it below to unlock your 6-week program.
+              Fill your biodata and the Program Registration Code→
+              issued to you and sign up to unlock your 6-week program.
             </div>
             """, unsafe_allow_html=True)
 
