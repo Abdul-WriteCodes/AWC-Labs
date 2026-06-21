@@ -40,6 +40,19 @@ def get_reflection_cached(email: str, week: int) -> dict | None:
 def show():
     apply_css()
 
+    # ── Celebration handler (runs at top of next rerun) ───────
+    celebrate = st.session_state.pop("celebrate", None)
+    if celebrate == "tasks":
+        w = st.session_state.pop("celebrate_week", "")
+        st.toast(f"Week {w} tasks complete! Now write your reflection 🎉", icon="🏅")
+        st.balloons()
+    elif celebrate == "reflection":
+        w = st.session_state.pop("celebrate_week", "")
+        st.toast(f"Week {w} reflection submitted — great work! 🙌", icon="📝")
+        st.balloons()
+    elif celebrate == "task_single":
+        st.toast("Task marked complete!", icon="✅")
+
     participant = get_current_participant()
     first_name  = participant["full_name"].split()[0]
     email       = participant["email"]
@@ -134,12 +147,11 @@ def show():
                             email, week_num, idx,
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         )
-                        # Balloons if this was the last remaining task
                         if len(week_done) + 1 == len(week_data["tasks"]):
-                            st.toast(f"Week {week_num} tasks complete! Now write your reflection 🎉", icon="🏅")
-                            st.balloons()
+                            st.session_state["celebrate"] = "tasks"
+                            st.session_state["celebrate_week"] = week_num
                         else:
-                            st.toast("Task marked complete!", icon="✅")
+                            st.session_state["celebrate"] = "task_single"
                         st.rerun()
 
             st.divider()
@@ -192,8 +204,8 @@ def show():
                                 email, week_num, response.strip(),
                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             )
-                            st.toast("Reflection submitted — great work! 🙌", icon="📝")
-                            st.balloons()
+                            st.session_state["celebrate"] = "reflection"
+                            st.session_state["celebrate_week"] = week_num
                             st.rerun()
                         else:
                             st.warning("Please write something before submitting.")
@@ -227,4 +239,4 @@ def show():
                 f'<span style="color:#4A6080;font-size:0.85rem;"> — {path["desc"]}</span>'
                 f'</div>',
                 unsafe_allow_html=True
-                    )
+            )
