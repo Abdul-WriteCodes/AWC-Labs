@@ -34,8 +34,19 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("""
+    <div class="lp-trust-strip">
+      <div class="lp-trust-item">
+        <span class="check">✓</span>
+        No password needed
+      </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+
     # ── Registration & Login ───────────────────────────────
-    with st.expander("🔐 Registration & Login", expanded=True):
+    with st.expander("🔐 Registration & Login", expanded=False):
 
         tab_register, tab_login = st.tabs(
             ["✦ New Registration", "→ Already Registered"]
