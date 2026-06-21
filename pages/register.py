@@ -21,23 +21,7 @@ def show():
     <span class="dot">●</span> 6 weeks
   </div>
 
-  <div class="lp-value-grid">
-    <div class="lp-value-card">
-      <div class="lp-value-icon">📖</div>
-      <div class="lp-value-title">Book-led curriculum</div>
-      <div class="lp-value-desc">Weekly tasks tied directly to Enter AI chapters</div>
-    </div>
-    <div class="lp-value-card">
-      <div class="lp-value-icon">✍️</div>
-      <div class="lp-value-title">Personal feedback</div>
-      <div class="lp-value-desc">Submit weekly reflections and get direct responses</div>
-    </div>
-    <div class="lp-value-card">
-      <div class="lp-value-icon">🚀</div>
-      <div class="lp-value-title">Career accountability</div>
-      <div class="lp-value-desc">Track your progress from aspirant to AI-ready</div>
-    </div>
-  </div>
+  
 </div>
 """, unsafe_allow_html=True)
 
