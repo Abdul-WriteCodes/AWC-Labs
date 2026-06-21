@@ -75,6 +75,16 @@ html, body, [class*="css"], .stApp {
   opacity: 1 !important;
 }
 
+[data-testid="stHeader"] {
+    background: #080B0F !important;
+    border-bottom: 1px solid #1F2D3D !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}
+
+
 /* Hide only the auto-page-list, not the toggle */
 [data-testid="stSidebarNav"] { display: none !important; }
 
