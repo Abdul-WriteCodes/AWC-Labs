@@ -134,7 +134,12 @@ def show():
                             email, week_num, idx,
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         )
-                        st.toast("Task marked complete!", icon="✅")
+                        # Balloons if this was the last remaining task
+                        if len(week_done) + 1 == len(week_data["tasks"]):
+                            st.toast(f"Week {week_num} tasks complete! Now write your reflection 🎉", icon="🏅")
+                            st.balloons()
+                        else:
+                            st.toast("Task marked complete!", icon="✅")
                         st.rerun()
 
             st.divider()
@@ -187,7 +192,8 @@ def show():
                                 email, week_num, response.strip(),
                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                             )
-                            st.toast("Reflection submitted!", icon="📝")
+                            st.toast("Reflection submitted — great work! 🙌", icon="📝")
+                            st.balloons()
                             st.rerun()
                         else:
                             st.warning("Please write something before submitting.")
@@ -221,4 +227,4 @@ def show():
                 f'<span style="color:#4A6080;font-size:0.85rem;"> — {path["desc"]}</span>'
                 f'</div>',
                 unsafe_allow_html=True
-            )
+                    )
