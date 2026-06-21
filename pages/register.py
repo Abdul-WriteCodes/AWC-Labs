@@ -33,6 +33,39 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
+    # ── Social Proof ───────────────────────────────────────────
+avatar_folder = "images"  # your folder name
+
+avatars = [
+    os.path.join(avatar_folder, img)
+    for img in os.listdir(avatar_folder)
+    if img.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
+][:8]  # first 8 images
+
+st.markdown(
+    """
+    <h4 style="text-align:center;margin-top:10px;margin-bottom:5px;">
+        Join Builders Already Growing With Crea8it
+    </h4>
+    """,
+    unsafe_allow_html=True
+)
+
+cols = st.columns(len(avatars))
+
+for col, avatar in zip(cols, avatars):
+    with col:
+        st.image(avatar, width=60)
+
+st.markdown(
+    """
+    <p style="text-align:center;color:#8BA0B8;margin-top:10px;">
+        Trusted by students, founders, researchers and aspiring tech professionals.
+    </p>
+    """,
+    unsafe_allow_html=True
+)
+
 
 
     # ── Registration & Login ───────────────────────────────
