@@ -13,13 +13,12 @@ def show():
     st.markdown("""
 <div class="lp-hero">
   <div class="lp-wordmark">
-    <span class="c8-white">Crea</span><span class="c8-8">8</span><span class="c8-teal" style="color:#00B4D8;">it</span>
+    <span class="c8-white">Crea</span><span class="c8-8">8it</span><span class="c8-teal" style="color:#00B4D8;"> Labs</span>
   </div>
-  <div class="lp-tagline">AI Career Launch Program</div>
+  <div class="lp-tagline">Build ● Launch ● Win</div>
   <div class="lp-badge">
     <span class="dot">●</span> Cohort 1 is open
     <span class="dot">●</span> 6 weeks
-    <span class="dot">●</span> Powered by Enter AI
   </div>
 
   <div class="lp-value-grid">
