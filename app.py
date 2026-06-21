@@ -23,7 +23,7 @@ with st.sidebar:
 <div style="padding:12px 0 16px 0;">
   <div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;
               letter-spacing:-0.04em;line-height:1;">
-    <span style="color:#F0F4F8;">Crea</span><span style="color:#F5A623;">8</span><span style="color:#00B4D8;">it</span>
+    <span style="color:#F0F4F8;">Crea</span><span style="color:#F5A623;">8it </span><span style="color:#00B4D8;">Lab</span>
   </div>
   <div style="font-size:0.68rem;color:#4A6080;text-transform:uppercase;
               letter-spacing:0.12em;margin-top:4px;font-family:'DM Mono',monospace;">
