@@ -35,9 +35,76 @@ def show():
     </div>
     """, unsafe_allow_html=True)
     
-    # Trust banner — real user avatars + usage count
-    # To swap images: replace files in assets/avatars/ (user1.jpg–user4.jpg)
-            
+    # ── Social Proof Avatar Strip ───────────────────────────
+    # Loads user1.jpeg – user6.jpeg from assets/avatars/
+    avatar_files = [f"user{i}.jpeg" for i in range(1, 7)]
+    avatar_b64 = []
+
+    for fname in avatar_files:
+        path = os.path.join("assets", "avatars", fname)
+        if os.path.exists(path):
+            with open(path, "rb") as f:
+                ext = fname.rsplit(".", 1)[-1].lower()
+                mime = "image/jpeg" if ext in ("jpg", "jpeg") else f"image/{ext}"
+                encoded = base64.b64encode(f.read()).decode()
+                avatar_b64.append(f"data:{mime};base64,{encoded}")
+
+    if avatar_b64:
+        imgs_html = "".join(
+            f'<img src="{src}" class="sp-avatar" alt="cohort member" />'
+            for src in avatar_b64
+        )
+        st.markdown(f"""
+        <style>
+          .sp-wrap {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 18px 0 22px;
+          }}
+          .sp-avatars {{
+            display: flex;
+            align-items: center;
+          }}
+          .sp-avatar {{
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #0A1628;
+            margin-left: -10px;
+            box-shadow: 0 0 0 2px #00B4D8;
+          }}
+          .sp-avatars img:first-child {{ margin-left: 0; }}
+          .sp-text {{
+            font-size: 0.85rem;
+            color: #8BA0B8;
+            line-height: 1.45;
+          }}
+          .sp-text strong {{
+            color: #E8EDF2;
+            display: block;
+          }}
+          .sp-dot {{
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            display: inline-block;
+            margin-right: 5px;
+            box-shadow: 0 0 6px #22c55e;
+          }}
+        </style>
+        <div class="sp-wrap">
+          <div class="sp-avatars">{imgs_html}</div>
+          <div class="sp-text">
+            <strong>Early cohort members are in</strong>
+            <span><span class="sp-dot"></span>Join them — spots are limited</span>
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
 
 
     # ── Registration & Login ───────────────────────────────
