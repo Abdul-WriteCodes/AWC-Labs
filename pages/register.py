@@ -18,7 +18,7 @@ def show():
     st.markdown("""
     <div class="lp-hero">
       <div class="lp-wordmark">
-        <span class="c8-white">Crea8it</span>
+        <span class="c8-gold">Crea8it</span>
         <span class="c8-teal" style="color:#00B4D8;"> Labs</span>
       </div>
 
@@ -33,15 +33,6 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="lp-trust-strip">
-      <div class="lp-trust-item">
-        <span class="check">✓</span>
-        No password needed
-      </div>
-
-    </div>
-    """, unsafe_allow_html=True)
 
 
     # ── Registration & Login ───────────────────────────────
