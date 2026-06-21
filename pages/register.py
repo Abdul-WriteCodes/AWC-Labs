@@ -34,33 +34,65 @@ def show():
     </div>
     """, unsafe_allow_html=True)
     
-    # ── Social Proof ───────────────────────────────────────────
-    avatar_folder = "images"  # your folder name
-    avatars = [
-        os.path.join(avatar_folder, img)
-        for img in os.listdir(avatar_folder)
-        if img.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))
-    ][:8]  # first 8 images
-    st.markdown(
-        """
-        <h4 style="text-align:center;margin-top:10px;margin-bottom:5px;">
-        Join Builders Already Growing With Crea8it
-        </h4>
-        """,
-        unsafe_allow_html=True
-    )
-    cols = st.columns(len(avatars))
-    for col, avatar in zip(cols, avatars):
-        with col:
-            st.image(avatar, width=60)
-    st.markdown(
-        """
-        <p style="text-align:center;color:#8BA0B8;margin-top:10px;">
-        Trusted by students, founders, researchers and aspiring tech professionals.
-        </p>
-        """,
-        unsafe_allow_html=True
-    )
+    # Trust banner — real user avatars + usage count
+    # To swap images: replace files in assets/avatars/ (user1.jpg–user4.jpg)
+    def _avatar_b64(filename: str) -> str:
+        import base64, os
+        path = os.path.join(os.path.dirname(__file__), "assets", "avatars", filename)
+        with open(path, "rb") as _f:
+            return base64.b64encode(_f.read()).decode()
+
+    _av = [_avatar_b64(f"user{i}.jpeg") for i in range(1, 7)]
+
+    st.html(f"""
+    <div style="
+        max-width:860px; margin:0 auto;
+        padding: 0 clamp(20px,5vw,48px) 32px;
+        display:flex; justify-content:center;
+    ">
+      <div style="
+        display:inline-flex; align-items:center; gap:16px;
+        background:rgba(255,255,255,0.03);
+        border:1px solid rgba(255,255,255,0.07);
+        border-radius:100px; padding:10px 22px 10px 10px;
+      ">
+        <div style="display:flex; align-items:center;">
+          <img src="data:image/jpeg;base64,{_av[0]}"
+            style="width:46px;height:46px;border-radius:50%;border:2px solid #05070f;object-fit:cover;margin-right:-10px;position:relative;z-index:6;" />
+          <img src="data:image/jpeg;base64,{_av[1]}"
+            style="width:46px;height:46px;border-radius:50%;border:2px solid #05070f;object-fit:cover;margin-right:-10px;position:relative;z-index:5;" />
+          <img src="data:image/jpeg;base64,{_av[2]}"
+            style="width:46px;height:46px;border-radius:50%;border:2px solid #05070f;object-fit:cover;margin-right:-10px;position:relative;z-index:4;" />
+          <img src="data:image/jpeg;base64,{_av[3]}"
+            style="width:46px;height:46px;border-radius:50%;border:2px solid #05070f;object-fit:cover;margin-right:-10px;position:relative;z-index:3;" />
+          <img src="data:image/jpeg;base64,{_av[4]}"
+            style="width:46px;height:46px;border-radius:50%;border:2px solid #05070f;object-fit:cover;margin-right:-10px;position:relative;z-index:2;" />
+          <img src="data:image/jpeg;base64,{_av[5]}"
+            style="width:46px;height:46px;border-radius:50%;border:2px solid #05070f;object-fit:cover;margin-right:-10px;position:relative;z-index:1;" />
+          <div style="
+            width:46px;height:46px;border-radius:50%;
+            border:2px solid #05070f;
+            background:#10141f;
+            display:flex;align-items:center;justify-content:center;
+            font-family:'DM Mono',monospace;font-size:0.52rem;
+            color:#9aa3be;font-weight:600;
+            position:relative;z-index:0;
+          ">+4</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00e5c8;flex-shrink:0;"></span>
+            <span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:#e4eaf8;font-weight:500;">
+              Trusted by <strong style="color:#00e5c8;">10 researchers</strong>
+            </span>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.58rem;color:#9aa3be;padding-left:12px;">
+            500+ Analyses run by Researchers & Students Worldwide
+          </div>
+        </div>
+      </div>
+    </div>
+    """)
 
 
 
