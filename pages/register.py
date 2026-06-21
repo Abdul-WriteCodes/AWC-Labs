@@ -25,7 +25,7 @@ def show():
       </div>
 
       <div class="lp-tagline">
-        Build ● Launch ● Win
+        Build ⚙️ ● Launch 🚀 ● Learn 🤸🏻 ● Win 🏆
       </div>
 
       <div class="lp-badge">
@@ -279,19 +279,7 @@ def show():
         No password needed
       </div>
 
-      <div class="lp-trust-item">
-        <span class="check">✓</span>
-        One payment code per account
-      </div>
 
-      <div class="lp-trust-item">
-        <span class="check">✓</span>
-        Progress saved automatically
-      </div>
 
-      <div class="lp-trust-item">
-        <span class="check">✓</span>
-        Personal feedback from Abdul
-      </div>
     </div>
     """, unsafe_allow_html=True)
