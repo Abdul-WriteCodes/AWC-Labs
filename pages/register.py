@@ -115,10 +115,10 @@ def show():
         </div>
         """, unsafe_allow_html=True)
 
-
+        st.markdown("<div style='height:20px;'></div>", unsafe_allow_html=True)
 
     # ── Registration & Login ───────────────────────────────
-    with st.expander("Get Started👇: Registration & Login 🔐", expanded=False):
+    with st.expander("🔐 Registration & Login", expanded=False):
 
         tab_register, tab_login = st.tabs(
             ["✦ New Registration", "→ Already Registered"]
