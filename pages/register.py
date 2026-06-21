@@ -102,6 +102,13 @@ def show():
             <strong>Early cohort members are in</strong>
             <span><span class="sp-dot"></span>Join them — spots are limited</span>
           </div>
+
+
+        <div style="font-size:11.5px;color:#6B7280;text-align:center;
+              line-height:1.6;max-width:340px;">
+              Trusted by <span style="color:#D1D5DB;">Builders, Founders, and career aspirants</span> and more amazing businesses 🇳🇬.
+        </div>
+          
         </div>
         """, unsafe_allow_html=True)
 
