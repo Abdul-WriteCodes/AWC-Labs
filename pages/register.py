@@ -107,9 +107,12 @@ def show():
         """, unsafe_allow_html=True)
         
         st.markdown(f"""
-        <div class="sp-text";style="font-size:11.5px;color:#6B7280;text-align:center; line-height:1.6;max-width:340px;"> 
-            <strong>Trusted by <span style="color:#D1D5DB;">Builders, Founders, and career aspirants</span> and more </strong>
+        
+        <div style="font-size:11.5px;color:#6B7280;text-align:center;
+              line-height:1.6;max-width:340px;">
+              Trusted by <span style="color:#D1D5DB;">Builders, Founders, and career aspirants</span> and more amazing businesses 🇳🇬.
         </div>
+
         """, unsafe_allow_html=True)
 
 
