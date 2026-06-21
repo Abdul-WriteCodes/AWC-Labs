@@ -39,7 +39,7 @@ def show():
     # To swap images: replace files in assets/avatars/ (user1.jpg–user4.jpg)
             
     def _avatar_b64(filename: str) -> str:
-    path = os.path.join(
+        path = os.path.join(
         os.path.dirname(os.path.dirname(__file__)),
         "assets",
         "avatars",
