@@ -20,7 +20,7 @@ def show():
     st.markdown("""
     <div class="lp-hero">
       <div class="lp-wordmark">
-        <span class="c8-gold" style="color:#FFD700;">Crea8it</span>
+        <span class="c8-gold" style="color:#FFD700;">AWC</span>
         <span class="c8-teal" style="color:#00B4D8;"> Labs</span>
       </div>
 
@@ -111,7 +111,7 @@ def show():
               line-height:1.7;max-width:340px;margin:0 auto;">
               Join the builders turning
               <span style="color:#FFD700;">ideas into real products, careers, and startups</span>
-              — from scratch, with grit and resilience, in the most Crea8ive way.
+              — from scratch, with grit and resilience, in the most creative way.
         </div>
         """, unsafe_allow_html=True)
 
