@@ -390,7 +390,7 @@ def show():
         <div class="sp-section">
           <div class="sp-wrap">
             <div class="sp-avatars">{imgs_html}</div>
-           
+            
           </div>
           <p class="sp-blurb">
             Join the builders turning
@@ -403,7 +403,7 @@ def show():
     # ── Registration & Login expander ──────────────────────
     with st.expander("Get Started Here👇: Registration & Login 🔐", expanded=False):
 
-        tab_register, tab_login = st.tabs.(
+        tab_register, tab_login = st.tabs(
             ["✦ New Registration", "→ Already Registered"]
         )
 
