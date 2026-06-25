@@ -13,28 +13,106 @@ from utils.auth import login_participant
 from config import PROGRAM_NAME
 
 
-# ── CSS goes via st.markdown — it injects into the main Streamlit DOM ─────────
-# st.html() is sandboxed per-call; CSS inside it never reaches other elements.
-# st.markdown(unsafe_allow_html=True) with <style> tags DOES reach the main DOM.
-LAB_CSS = """
+# SVG encoded as a data URI for use as a CSS background-image.
+# This is the only approach that reliably works on Streamlit Cloud:
+# - st.markdown <style> reaches the real DOM
+# - background-image on the app root doesn't require iframe escaping
+# - No CSP violations, no sanitisation issues
+LAB_SVG_DATA_URI = (
+    "data:image/svg+xml,"
+    "%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20"
+    "viewBox%3D%270%200%20800%20900%27%20preserveAspectRatio%3D%27xMidYMid%20slice%27%3E"
+    # Orbital rings top-right
+    "%3Ccircle%20cx%3D%27740%27%20cy%3D%2790%27%20r%3D%2780%27%20fill%3D%27none%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.7%27%20opacity%3D%270.22%27%2F%3E"
+    "%3Ccircle%20cx%3D%27740%27%20cy%3D%2790%27%20r%3D%2755%27%20fill%3D%27none%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.5%27%20opacity%3D%270.15%27%2F%3E"
+    "%3Ccircle%20cx%3D%27740%27%20cy%3D%2790%27%20r%3D%278%27%20fill%3D%27%2300B4D8%27%20opacity%3D%270.3%27%2F%3E"
+    "%3Cline%20x1%3D%27740%27%20y1%3D%2710%27%20x2%3D%27740%27%20y2%3D%27170%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.4%27%20opacity%3D%270.14%27%2F%3E"
+    "%3Cline%20x1%3D%27660%27%20y1%3D%2790%27%20x2%3D%27820%27%20y2%3D%2790%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.4%27%20opacity%3D%270.14%27%2F%3E"
+    # Orbital rings bottom-left
+    "%3Ccircle%20cx%3D%2760%27%20cy%3D%27780%27%20r%3D%2770%27%20fill%3D%27none%27%20stroke%3D%27%23F5A623%27%20stroke-width%3D%270.7%27%20opacity%3D%270.2%27%2F%3E"
+    "%3Ccircle%20cx%3D%2760%27%20cy%3D%27780%27%20r%3D%2745%27%20fill%3D%27none%27%20stroke%3D%27%23F5A623%27%20stroke-width%3D%270.5%27%20opacity%3D%270.13%27%2F%3E"
+    "%3Ccircle%20cx%3D%2760%27%20cy%3D%27780%27%20r%3D%276%27%20fill%3D%27%23F5A623%27%20opacity%3D%270.28%27%2F%3E"
+    # Orbital rings mid-right
+    "%3Ccircle%20cx%3D%27790%27%20cy%3D%27520%27%20r%3D%2760%27%20fill%3D%27none%27%20stroke%3D%27%2300C896%27%20stroke-width%3D%270.6%27%20opacity%3D%270.18%27%2F%3E"
+    "%3Ccircle%20cx%3D%27790%27%20cy%3D%27520%27%20r%3D%2738%27%20fill%3D%27none%27%20stroke%3D%27%2300C896%27%20stroke-width%3D%270.4%27%20opacity%3D%270.12%27%2F%3E"
+    "%3Ccircle%20cx%3D%27790%27%20cy%3D%27520%27%20r%3D%275%27%20fill%3D%27%2300C896%27%20opacity%3D%270.28%27%2F%3E"
+    # Flask top-left (simplified polygon)
+    "%3Cpolygon%20points%3D%2720%2C40%2036%2C40%2048%2C135%208%2C135%27%20fill%3D%27%2300B4D8%27%20opacity%3D%270.06%27%2F%3E"
+    "%3Crect%20x%3D%2714%27%20y%3D%2736%27%20width%3D%2728%27%20height%3D%274%27%20fill%3D%27%231F2D3D%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Cellipse%20cx%3D%2728%27%20cy%3D%27133%27%20rx%3D%2720%27%20ry%3D%275%27%20fill%3D%27none%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.8%27%20opacity%3D%270.4%27%2F%3E"
+    "%3Ccircle%20cx%3D%2718%27%20cy%3D%27105%27%20r%3D%273%27%20fill%3D%27%2300B4D8%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Ccircle%20cx%3D%2734%27%20cy%3D%27118%27%20r%3D%272%27%20fill%3D%27%2300B4D8%27%20opacity%3D%270.38%27%2F%3E"
+    # Flask bottom-right (simplified)
+    "%3Cpolygon%20points%3D%27708%2C700%20722%2C700%20733%2C782%20697%2C782%27%20fill%3D%27%23F5A623%27%20opacity%3D%270.06%27%2F%3E"
+    "%3Crect%20x%3D%27702%27%20y%3D%27696%27%20width%3D%2726%27%20height%3D%274%27%20fill%3D%27%231F2D3D%27%20opacity%3D%270.45%27%2F%3E"
+    "%3Cellipse%20cx%3D%27715%27%20cy%3D%27780%27%20rx%3D%2718%27%20ry%3D%274%27%20fill%3D%27none%27%20stroke%3D%27%23F5A623%27%20stroke-width%3D%270.7%27%20opacity%3D%270.35%27%2F%3E"
+    # Test tube right
+    "%3Crect%20x%3D%27773%27%20y%3D%27195%27%20width%3D%2714%27%20height%3D%2755%27%20rx%3D%272%27%20fill%3D%27%231F2D3D%27%20opacity%3D%270.3%27%2F%3E"
+    "%3Crect%20x%3D%27773%27%20y%3D%27222%27%20width%3D%2714%27%20height%3D%2728%27%20rx%3D%271%27%20fill%3D%27%2300C896%27%20opacity%3D%270.18%27%2F%3E"
+    # Neural net top-center
+    "%3Ccircle%20cx%3D%27360%27%20cy%3D%2718%27%20r%3D%275%27%20fill%3D%27%230D1117%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.8%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Ccircle%20cx%3D%27410%27%20cy%3D%2718%27%20r%3D%275%27%20fill%3D%27%230D1117%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.8%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Ccircle%20cx%3D%27385%27%20cy%3D%2750%27%20r%3D%275%27%20fill%3D%27%230D1117%27%20stroke%3D%27%23F5A623%27%20stroke-width%3D%270.8%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Ccircle%20cx%3D%27385%27%20cy%3D%2782%27%20r%3D%275%27%20fill%3D%27%230D1117%27%20stroke%3D%27%2300C896%27%20stroke-width%3D%270.8%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Cline%20x1%3D%27360%27%20y1%3D%2718%27%20x2%3D%27385%27%20y2%3D%2750%27%20stroke%3D%27%238BA0B8%27%20stroke-width%3D%270.5%27%20opacity%3D%270.3%27%2F%3E"
+    "%3Cline%20x1%3D%27410%27%20y1%3D%2718%27%20x2%3D%27385%27%20y2%3D%2750%27%20stroke%3D%27%238BA0B8%27%20stroke-width%3D%270.5%27%20opacity%3D%270.3%27%2F%3E"
+    "%3Cline%20x1%3D%27385%27%20y1%3D%2750%27%20x2%3D%27385%27%20y2%3D%2782%27%20stroke%3D%27%238BA0B8%27%20stroke-width%3D%270.5%27%20opacity%3D%270.3%27%2F%3E"
+    # Circuit top-right
+    "%3Cpolyline%20points%3D%27580%2C10%20580%2C40%20640%2C40%20640%2C70%20700%2C70%27%20fill%3D%27none%27%20stroke%3D%27%231F2D3D%27%20stroke-width%3D%270.7%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Ccircle%20cx%3D%27580%27%20cy%3D%2710%27%20r%3D%272.5%27%20fill%3D%27%2300B4D8%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Ccircle%20cx%3D%27640%27%20cy%3D%2740%27%20r%3D%222.5%27%20fill%3D%27%231F2D3D%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.6%27%20opacity%3D%270.5%27%2F%3E"
+    "%3Ccircle%20cx%3D%27700%27%20cy%3D%2770%27%20r%3D%222.5%27%20fill%3D%27%2300B4D8%27%20opacity%3D%270.4%27%2F%3E"
+    # Circuit bottom-left
+    "%3Cpolyline%20points%3D%2730%2C700%2030%2C660%2090%2C660%2090%2C630%20150%2C630%27%20fill%3D%27none%27%20stroke%3D%27%231F2D3D%27%20stroke-width%3D%270.7%27%20opacity%3D%270.45%27%2F%3E"
+    "%3Ccircle%20cx%3D%2730%27%20cy%3D%27700%27%20r%3D%222.5%27%20fill%3D%27%23F5A623%27%20opacity%3D%270.45%27%2F%3E"
+    "%3Ccircle%20cx%3D%2790%27%20cy%3D%27660%27%20r%3D%222.5%27%20fill%3D%27%231F2D3D%27%20stroke%3D%27%23F5A623%27%20stroke-width%3D%270.6%27%20opacity%3D%270.45%27%2F%3E"
+    # Atom mid-left
+    "%3Ccircle%20cx%3D%2735%27%20cy%3D%27285%27%20r%3D%275%27%20fill%3D%27%23F5A623%27%20opacity%3D%270.45%27%2F%3E"
+    "%3Cellipse%20cx%3D%2735%27%20cy%3D%27285%27%20rx%3D%2730%27%20ry%3D%2710%27%20fill%3D%27none%27%20stroke%3D%27%23F5A623%27%20stroke-width%3D%270.7%27%20opacity%3D%270.3%27%2F%3E"
+    "%3Cellipse%20cx%3D%2735%27%20cy%3D%27285%27%20rx%3D%2730%27%20ry%3D%2710%27%20fill%3D%27none%27%20stroke%3D%27%23F5A623%27%20stroke-width%3D%270.7%27%20opacity%3D%270.3%27%20transform%3D%27rotate(60%2035%20285)%27%2F%3E"
+    "%3Cellipse%20cx%3D%2735%27%20cy%3D%27285%27%20rx%3D%2730%27%20ry%3D%2710%27%20fill%3D%27none%27%20stroke%3D%27%23F5A623%27%20stroke-width%3D%270.7%27%20opacity%3D%270.3%27%20transform%3D%27rotate(120%2035%20285)%27%2F%3E"
+    # Atom right-bottom
+    "%3Ccircle%20cx%3D%27755%27%20cy%3D%27635%27%20r%3D%274%27%20fill%3D%27%2300B4D8%27%20opacity%3D%270.4%27%2F%3E"
+    "%3Cellipse%20cx%3D%27755%27%20cy%3D%27635%27%20rx%3D%2728%27%20ry%3D%279%27%20fill%3D%27none%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.6%27%20opacity%3D%270.25%27%2F%3E"
+    "%3Cellipse%20cx%3D%27755%27%20cy%3D%27635%27%20rx%3D%2728%27%20ry%3D%279%27%20fill%3D%27none%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.6%27%20opacity%3D%270.25%27%20transform%3D%27rotate(60%20755%20635)%27%2F%3E"
+    "%3Cellipse%20cx%3D%27755%27%20cy%3D%27635%27%20rx%3D%2728%27%20ry%3D%279%27%20fill%3D%27none%27%20stroke%3D%27%2300B4D8%27%20stroke-width%3D%270.6%27%20opacity%3D%270.25%27%20transform%3D%27rotate(120%20755%20635)%27%2F%3E"
+    "%3C%2Fsvg%3E"
+)
+
+
+LAB_CSS = f"""
 <style>
+/* ── Lab SVG background on the Streamlit root container ── */
+[data-testid="stAppViewContainer"] {{
+  background-image: url("{LAB_SVG_DATA_URI}");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}}
+
 /* ── Hero ── */
-.lp-hero { padding: 24px 0 16px; text-align: center; }
-.lp-wordmark {
+.lp-hero {{
+  padding: 24px 0 16px;
+  text-align: center;
+}}
+.lp-wordmark {{
   font-family: 'Syne', sans-serif;
-  font-size: 3rem;
+  font-size: 2.6rem;
   font-weight: 800;
   letter-spacing: -0.04em;
-  line-height: 1.05;
+  line-height: 1.1;
+  white-space: nowrap;
   margin-bottom: 10px;
-}
-.lp-tagline {
-  font-size: 0.88rem;
+}}
+.lp-tagline {{
+  font-size: 0.78rem;
   color: #8BA0B8;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   margin-bottom: 14px;
-}
-.lp-badge {
+  white-space: nowrap;
+}}
+.lp-badge {{
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -46,276 +124,125 @@ LAB_CSS = """
   font-size: 0.65rem;
   color: #4A6080;
   letter-spacing: 0.1em;
-}
-.lp-badge-dot { color: #22c55e; }
+  white-space: nowrap;
+}}
+.lp-badge-dot {{ color: #22c55e; }}
 
 /* ── Icon strip ── */
-.lab-icon-strip {
+.lab-icon-strip {{
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 16px 0 20px;
-}
-.lab-icon-pill {
+  gap: 8px;
+  padding: 14px 0 18px;
+}}
+.lab-icon-pill {{
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   background: #111827;
   border: 1px solid #1F2D3D;
   border-radius: 20px;
-  padding: 6px 14px;
+  padding: 5px 12px;
   font-family: 'DM Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   color: #8BA0B8;
   white-space: nowrap;
-}
+}}
 
 /* ── Social proof ── */
-.sp-section {
+.sp-section {{
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   padding: 4px 0 8px;
-}
-.sp-wrap {
+}}
+.sp-wrap {{
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-.sp-avatars { display: flex; align-items: center; }
-.sp-avatar {
-  width: 38px; height: 38px;
+  gap: 10px;
+  margin-bottom: 8px;
+}}
+.sp-avatars {{ display: flex; align-items: center; }}
+.sp-avatar {{
+  width: 34px; height: 34px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #0A1628;
-  margin-left: -10px;
-  box-shadow: 0 0 0 2px #00B4D8;
-}
-.sp-avatars img:first-child { margin-left: 0; }
-.sp-text { font-size: 0.82rem; color: #8BA0B8; line-height: 1.45; text-align: left; }
-.sp-dot {
-  width: 7px; height: 7px;
+  margin-left: -9px;
+  box-shadow: 0 0 0 1.5px #00B4D8;
+}}
+.sp-avatars img:first-child {{ margin-left: 0; }}
+.sp-text {{
+  font-size: 0.75rem;
+  color: #8BA0B8;
+  line-height: 1.4;
+  white-space: nowrap;
+}}
+.sp-dot {{
+  width: 6px; height: 6px;
   border-radius: 50%;
   background: #22c55e;
   display: inline-block;
-  margin-right: 5px;
-  box-shadow: 0 0 5px #22c55e;
-}
-.sp-blurb {
-  font-size: 11px;
+  margin-right: 4px;
+  box-shadow: 0 0 4px #22c55e;
+}}
+.sp-blurb {{
+  font-size: 0.72rem;
   color: #6B7280;
   text-align: center;
-  line-height: 1.7;
-  max-width: 300px;
-  margin: 0 auto 20px;
-}
+  line-height: 1.65;
+  max-width: 280px;
+  margin: 0 auto 18px;
+}}
 
 /* ── Trust strip ── */
-.lp-trust-strip {
+.lp-trust-strip {{
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 18px 0 10px;
-}
-.lp-trust-item {
-  display: flex;
+  gap: 18px;
+  padding: 16px 0 10px;
+  white-space: nowrap;
+}}
+.lp-trust-item {{
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: 'DM Mono', monospace;
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   color: #4A6080;
-}
-.lp-check { color: #00C896; }
+}}
+.lp-check {{ color: #00C896; }}
 </style>
-"""
-
-# ── SVG background via st.html() (only SVG here, nothing else) ───────────────
-# The SVG is injected via a <script> that walks up from the iframe to the
-# parent page's document.body and appends the SVG there directly.
-# This is the only reliable way to get content from st.html() onto the real page.
-LAB_SVG_INJECTOR = """
-<script>
-(function() {
-  // Remove any previous instance so re-renders don't stack SVGs
-  var old = window.parent.document.getElementById('lab-bg-svg');
-  if (old) old.remove();
-
-  var svgNS = 'http://www.w3.org/2000/svg';
-
-  // Inject the fixed-position style into the parent document
-  var styleId = 'lab-bg-svg-style';
-  if (!window.parent.document.getElementById(styleId)) {
-    var s = window.parent.document.createElement('style');
-    s.id = styleId;
-    s.textContent = [
-      '#lab-bg-svg {',
-      '  position: fixed;',
-      '  top: 0; left: 0;',
-      '  width: 100vw; height: 100vh;',
-      '  pointer-events: none;',
-      '  z-index: 0;',
-      '}'
-    ].join('');
-    window.parent.document.head.appendChild(s);
-  }
-
-  var svgMarkup = `<svg id="lab-bg-svg" viewBox="0 0 800 900"
-    preserveAspectRatio="xMidYMid slice"
-    xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-
-  <circle cx="740" cy="90" r="80" fill="none" stroke="#00B4D8" stroke-width="0.7" opacity="0.2"/>
-  <circle cx="740" cy="90" r="55" fill="none" stroke="#00B4D8" stroke-width="0.5" opacity="0.14"/>
-  <circle cx="740" cy="90" r="8"  fill="#00B4D8" opacity="0.28"/>
-  <line x1="740" y1="10" x2="740" y2="170" stroke="#00B4D8" stroke-width="0.4" opacity="0.12"/>
-  <line x1="660" y1="90" x2="820" y2="90"  stroke="#00B4D8" stroke-width="0.4" opacity="0.12"/>
-
-  <circle cx="60" cy="780" r="70" fill="none" stroke="#F5A623" stroke-width="0.7" opacity="0.18"/>
-  <circle cx="60" cy="780" r="45" fill="none" stroke="#F5A623" stroke-width="0.5" opacity="0.12"/>
-  <circle cx="60" cy="780" r="6"  fill="#F5A623" opacity="0.25"/>
-
-  <circle cx="790" cy="520" r="60" fill="none" stroke="#00C896" stroke-width="0.6" opacity="0.16"/>
-  <circle cx="790" cy="520" r="38" fill="none" stroke="#00C896" stroke-width="0.4" opacity="0.10"/>
-  <circle cx="790" cy="520" r="5"  fill="#00C896" opacity="0.25"/>
-
-  <g opacity="0.28" transform="translate(28,40)">
-    <line x1="20" y1="0"  x2="20" y2="55" stroke="#1F2D3D" stroke-width="1.2"/>
-    <line x1="36" y1="0"  x2="36" y2="55" stroke="#1F2D3D" stroke-width="1.2"/>
-    <line x1="14" y1="0"  x2="42" y2="0"  stroke="#1F2D3D" stroke-width="1.2"/>
-    <polygon points="20,55 8,95 48,95 36,55" fill="#0D1117" stroke="#1F2D3D" stroke-width="1"/>
-    <polygon points="20,55 10,90 46,90 36,55" fill="#00B4D8" opacity="0.12"/>
-    <ellipse cx="28" cy="93" rx="20" ry="5" fill="none" stroke="#00B4D8" stroke-width="0.7" opacity="0.4"/>
-    <ellipse cx="28" cy="97" rx="20" ry="5" fill="none" stroke="#00B4D8" stroke-width="0.5" opacity="0.25"/>
-    <circle cx="18" cy="72" r="2.5" fill="#00B4D8" opacity="0.5"/>
-    <circle cx="34" cy="80" r="1.8" fill="#00B4D8" opacity="0.35"/>
-    <circle cx="24" cy="85" r="1.4" fill="#00B4D8" opacity="0.28"/>
-  </g>
-
-  <g opacity="0.22" transform="translate(690,700)">
-    <line x1="18" y1="0"  x2="18" y2="48" stroke="#1F2D3D" stroke-width="1"/>
-    <line x1="32" y1="0"  x2="32" y2="48" stroke="#1F2D3D" stroke-width="1"/>
-    <line x1="12" y1="0"  x2="38" y2="0"  stroke="#1F2D3D" stroke-width="1"/>
-    <polygon points="18,48 7,82 43,82 32,48" fill="#0D1117" stroke="#1F2D3D" stroke-width="0.9"/>
-    <polygon points="18,48 9,78 41,78 32,48" fill="#F5A623" opacity="0.10"/>
-    <ellipse cx="25" cy="80" rx="18" ry="4.5" fill="none" stroke="#F5A623" stroke-width="0.7" opacity="0.35"/>
-    <circle cx="16" cy="62" r="2"   fill="#F5A623" opacity="0.45"/>
-    <circle cx="30" cy="70" r="1.5" fill="#F5A623" opacity="0.30"/>
-  </g>
-
-  <g opacity="0.20" transform="translate(770,200)">
-    <rect x="0"  y="0"  width="14" height="50" rx="2" fill="#0D1117" stroke="#1F2D3D" stroke-width="0.9"/>
-    <rect x="0"  y="28" width="14" height="22" rx="2" fill="#00C896" opacity="0.18"/>
-    <rect x="-3" y="-5" width="20" height="8"  rx="2" fill="#0D1117" stroke="#1F2D3D" stroke-width="0.8"/>
-    <ellipse cx="7" cy="50" rx="7" ry="3" fill="#00C896" opacity="0.3"/>
-  </g>
-
-  <g opacity="0.18" transform="translate(15,390) rotate(-20)">
-    <rect x="0"  y="0"  width="12" height="44" rx="2" fill="#0D1117" stroke="#1F2D3D" stroke-width="0.8"/>
-    <rect x="0"  y="24" width="12" height="20" rx="2" fill="#F5A623" opacity="0.15"/>
-    <rect x="-2" y="-4" width="16" height="7"  rx="2" fill="#0D1117" stroke="#1F2D3D" stroke-width="0.7"/>
-    <ellipse cx="6" cy="44" rx="6" ry="2.5" fill="#F5A623" opacity="0.25"/>
-  </g>
-
-  <g opacity="0.16" transform="translate(360,18)">
-    <circle cx="0"  cy="0"  r="5" fill="#0D1117" stroke="#00B4D8" stroke-width="0.8"/>
-    <circle cx="50" cy="0"  r="5" fill="#0D1117" stroke="#00B4D8" stroke-width="0.8"/>
-    <circle cx="25" cy="32" r="5" fill="#0D1117" stroke="#F5A623"  stroke-width="0.8"/>
-    <circle cx="25" cy="64" r="5" fill="#0D1117" stroke="#00C896"  stroke-width="0.8"/>
-    <line x1="0"  y1="0"  x2="25" y2="32" stroke="#8BA0B8" stroke-width="0.5"/>
-    <line x1="50" y1="0"  x2="25" y2="32" stroke="#8BA0B8" stroke-width="0.5"/>
-    <line x1="25" y1="32" x2="25" y2="64" stroke="#8BA0B8" stroke-width="0.5"/>
-  </g>
-
-  <g opacity="0.14" transform="translate(370,820)">
-    <circle cx="0"  cy="0"  r="4" fill="#0D1117" stroke="#00C896" stroke-width="0.7"/>
-    <circle cx="40" cy="0"  r="4" fill="#0D1117" stroke="#00C896" stroke-width="0.7"/>
-    <circle cx="20" cy="26" r="4" fill="#0D1117" stroke="#F5A623"  stroke-width="0.7"/>
-    <line x1="0"  y1="0"  x2="20" y2="26" stroke="#2A4050" stroke-width="0.5"/>
-    <line x1="40" y1="0"  x2="20" y2="26" stroke="#2A4050" stroke-width="0.5"/>
-  </g>
-
-  <g opacity="0.14" stroke="#1F2D3D" stroke-width="0.7" fill="none">
-    <polyline points="580,10 580,40 640,40 640,70 700,70"/>
-    <circle cx="580" cy="10" r="2.5" fill="#00B4D8" opacity="0.5"  stroke="none"/>
-    <circle cx="640" cy="40" r="2.5" fill="#1F2D3D" stroke="#00B4D8" stroke-width="0.6"/>
-    <circle cx="700" cy="70" r="2.5" fill="#00B4D8" opacity="0.4"  stroke="none"/>
-  </g>
-
-  <g opacity="0.13" stroke="#1F2D3D" stroke-width="0.7" fill="none">
-    <polyline points="30,700 30,660 90,660 90,630 150,630"/>
-    <circle cx="30"  cy="700" r="2.5" fill="#F5A623" opacity="0.45" stroke="none"/>
-    <circle cx="90"  cy="660" r="2.5" fill="#1F2D3D" stroke="#F5A623" stroke-width="0.6"/>
-    <circle cx="150" cy="630" r="2.5" fill="#F5A623" opacity="0.35" stroke="none"/>
-  </g>
-
-  <g opacity="0.12" stroke="#1F2D3D" stroke-width="0.6" fill="none">
-    <polyline points="0,450 50,450 50,490 110,490"/>
-    <circle cx="0"   cy="450" r="2" fill="#00C896" opacity="0.4"  stroke="none"/>
-    <circle cx="50"  cy="490" r="2" fill="#1F2D3D" stroke="#00C896" stroke-width="0.6"/>
-    <circle cx="110" cy="490" r="2" fill="#00C896" opacity="0.3"  stroke="none"/>
-  </g>
-
-  <g opacity="0.16" transform="translate(0,250)">
-    <circle cx="35" cy="35" r="5" fill="#F5A623" opacity="0.5"/>
-    <ellipse cx="35" cy="35" rx="30" ry="10" fill="none" stroke="#F5A623" stroke-width="0.7" transform="rotate(0,35,35)"/>
-    <ellipse cx="35" cy="35" rx="30" ry="10" fill="none" stroke="#F5A623" stroke-width="0.7" transform="rotate(60,35,35)"/>
-    <ellipse cx="35" cy="35" rx="30" ry="10" fill="none" stroke="#F5A623" stroke-width="0.7" transform="rotate(120,35,35)"/>
-  </g>
-
-  <g opacity="0.13" transform="translate(720,600)">
-    <circle cx="35" cy="35" r="4" fill="#00B4D8" opacity="0.45"/>
-    <ellipse cx="35" cy="35" rx="28" ry="9" fill="none" stroke="#00B4D8" stroke-width="0.6" transform="rotate(0,35,35)"/>
-    <ellipse cx="35" cy="35" rx="28" ry="9" fill="none" stroke="#00B4D8" stroke-width="0.6" transform="rotate(60,35,35)"/>
-    <ellipse cx="35" cy="35" rx="28" ry="9" fill="none" stroke="#00B4D8" stroke-width="0.6" transform="rotate(120,35,35)"/>
-  </g>
-
-  <line x1="740" y1="170" x2="700" y2="200" stroke="#1F2D3D" stroke-width="0.4" stroke-dasharray="3 6" opacity="0.18"/>
-  <line x1="60"  y1="710" x2="90"  y2="630" stroke="#1F2D3D" stroke-width="0.4" stroke-dasharray="3 6" opacity="0.14"/>
-  <line x1="385" y1="82"  x2="385" y2="120" stroke="#1F2D3D" stroke-width="0.4" stroke-dasharray="2 5" opacity="0.12"/>
-</svg>`;
-
-  var parser = new window.parent.DOMParser();
-  var doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
-  var svg = doc.documentElement;
-  window.parent.document.body.appendChild(svg);
-})();
-</script>
 """
 
 ICON_STRIP_HTML = """
 <div class="lab-icon-strip">
   <div class="lab-icon-pill">
-    <svg width="11" height="14" viewBox="0 0 11 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="11" height="14" viewBox="0 0 11 14" fill="none">
       <line x1="3.5" y1="0" x2="3.5" y2="5.5" stroke="#00B4D8" stroke-width="1.1" stroke-linecap="round"/>
       <line x1="7.5" y1="0" x2="7.5" y2="5.5" stroke="#00B4D8" stroke-width="1.1" stroke-linecap="round"/>
       <line x1="1.5" y1="0" x2="9.5" y2="0"   stroke="#00B4D8" stroke-width="1.1" stroke-linecap="round"/>
-      <polygon points="3.5,5.5 0.5,12 10.5,12 7.5,5.5" fill="none" stroke="#00B4D8"
-               stroke-width="0.9" stroke-linejoin="round"/>
-      <ellipse cx="5.5" cy="12" rx="4.5" ry="1.2" fill="none" stroke="#00B4D8"
-               stroke-width="0.6" opacity="0.5"/>
+      <polygon points="3.5,5.5 0.5,12 10.5,12 7.5,5.5" fill="none" stroke="#00B4D8" stroke-width="0.9" stroke-linejoin="round"/>
+      <ellipse cx="5.5" cy="12" rx="4.5" ry="1.2" fill="none" stroke="#00B4D8" stroke-width="0.6" opacity="0.5"/>
     </svg>
     Flask lab
   </div>
   <div class="lab-icon-pill">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
       <circle cx="7" cy="7" r="2" stroke="#F5A623" stroke-width="1"/>
-      <ellipse cx="7" cy="7" rx="6" ry="2.2" fill="none" stroke="#F5A623" stroke-width="0.8"
-               transform="rotate(-30, 7, 7)" opacity="0.6"/>
-      <ellipse cx="7" cy="7" rx="6" ry="2.2" fill="none" stroke="#F5A623" stroke-width="0.8"
-               transform="rotate(30, 7, 7)" opacity="0.6"/>
-      <ellipse cx="7" cy="7" rx="6" ry="2.2" fill="none" stroke="#F5A623" stroke-width="0.8"
-               opacity="0.45"/>
+      <ellipse cx="7" cy="7" rx="6" ry="2.2" fill="none" stroke="#F5A623" stroke-width="0.8" transform="rotate(-30, 7, 7)" opacity="0.6"/>
+      <ellipse cx="7" cy="7" rx="6" ry="2.2" fill="none" stroke="#F5A623" stroke-width="0.8" transform="rotate(30, 7, 7)" opacity="0.6"/>
+      <ellipse cx="7" cy="7" rx="6" ry="2.2" fill="none" stroke="#F5A623" stroke-width="0.8" opacity="0.45"/>
     </svg>
     AI/ML circuits
   </div>
   <div class="lab-icon-pill">
-    <svg width="14" height="12" viewBox="0 0 14 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
       <circle cx="2"  cy="2"  r="2" fill="#0D1117" stroke="#00C896" stroke-width="0.8"/>
       <circle cx="12" cy="2"  r="2" fill="#0D1117" stroke="#00C896" stroke-width="0.8"/>
       <circle cx="7"  cy="10" r="2" fill="#0D1117" stroke="#00C896" stroke-width="0.8"/>
@@ -326,10 +253,9 @@ ICON_STRIP_HTML = """
     Neural paths
   </div>
   <div class="lab-icon-pill">
-    <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
       <polyline points="0,7 3,7 4.5,1.5 7,9 9.5,4 11,7 14,7"
-                stroke="#8BA0B8" stroke-width="0.9"
-                stroke-linecap="round" stroke-linejoin="round"/>
+                stroke="#8BA0B8" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     Live signals
   </div>
@@ -340,18 +266,10 @@ ICON_STRIP_HTML = """
 def show():
     apply_css()
 
-    # 1. Inject CSS into the main Streamlit DOM via st.markdown
-    #    (st.markdown <style> tags reach the real page DOM, unlike st.html iframes)
+    # Inject CSS (including SVG as background-image data URI) into main DOM
     st.markdown(LAB_CSS, unsafe_allow_html=True)
 
-    # 2. Inject the SVG via a script that appends it to the parent page's body.
-    #    st.html() runs inside a sandboxed iframe — position:fixed inside an
-    #    iframe is fixed to the iframe, not the page. The script uses
-    #    window.parent.document to escape the iframe and insert the SVG directly
-    #    into the real DOM, where position:fixed works as expected.
-    st.html(LAB_SVG_INJECTOR)
-
-    # 3. Hero — plain markdown, CSS classes already injected above
+    # Hero
     st.markdown("""
     <div class="lp-hero">
       <div class="lp-wordmark">
@@ -367,10 +285,10 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
-    # 4. Icon strip
+    # Icon strip
     st.markdown(ICON_STRIP_HTML, unsafe_allow_html=True)
 
-    # 5. Avatar strip — build img tags, inject via markdown
+    # Avatar strip
     avatar_files = [f"user{i}.jpeg" for i in range(1, 7)]
     imgs_html = ""
     for fname in avatar_files:
@@ -391,25 +309,24 @@ def show():
           <div class="sp-wrap">
             <div class="sp-avatars">{imgs_html}</div>
             <div class="sp-text">
-              <span><span class="sp-dot"></span>Actively Used by 100+ Builders</span>
+              <span class="sp-dot"></span>Actively Used by 100+ Builders
             </div>
           </div>
           <p class="sp-blurb">
             Join the builders turning
             <span style="color:#FFD700;">ideas into real products, careers, and startups</span>
-            — from scratch, with grit and resilience, in the most creative way.
+            — from scratch, with grit and resilience.
           </p>
         </div>
         """, unsafe_allow_html=True)
 
-    # ── Registration & Login expander ──────────────────────
+    # Registration & Login expander
     with st.expander("Get Started Here👇: Registration & Login 🔐", expanded=False):
 
         tab_register, tab_login = st.tabs(
             ["✦ New Registration", "→ Already Registered"]
         )
 
-        # ── REGISTRATION TAB ──
         with tab_register:
             st.markdown("""
             <div class="alert-warn" style="margin:16px 0 20px;">
@@ -442,11 +359,9 @@ def show():
                 if not all([full_name, email, phone, payment_code]):
                     st.error("Please fill in all fields.")
                     return
-
                 if get_participant(email.strip().lower()):
                     st.warning("Email already registered — use the login tab.")
                     return
-
                 with st.spinner("Verifying payment code..."):
                     if not is_valid_code(payment_code.strip()):
                         st.error(
@@ -454,7 +369,6 @@ def show():
                             "Check your receipt or contact support."
                         )
                         return
-
                 with st.spinner("Setting up your account..."):
                     register_participant({
                         "full_name":     full_name.strip(),
@@ -464,7 +378,6 @@ def show():
                         "payment_code":  payment_code.strip(),
                         "registered_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     })
-
                 st.success(
                     f"Welcome, {full_name.split()[0]}! "
                     f"Your {PROGRAM_NAME} account is ready."
@@ -472,7 +385,6 @@ def show():
                 login_participant(email.strip().lower())
                 st.rerun()
 
-        # ── LOGIN TAB ──
         with tab_login:
             st.markdown("""
             <p style="color:#8BA0B8;font-size:0.88rem;margin:16px 0 20px;line-height:1.6;">
@@ -491,10 +403,8 @@ def show():
                 if not login_email:
                     st.error("Please enter your email address.")
                     return
-
                 with st.spinner("Looking up your account..."):
                     found = login_participant(login_email.strip().lower())
-
                 if found:
                     st.rerun()
                 else:
@@ -503,7 +413,7 @@ def show():
                         "Please register first or check for a typo."
                     )
 
-    # ── Trust strip ─────────────────────────────────────────
+    # Trust strip
     st.markdown("""
     <div class="lp-trust-strip">
       <div class="lp-trust-item"><span class="lp-check">✓</span> No password needed</div>
