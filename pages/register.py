@@ -390,7 +390,9 @@ def show():
         <div class="sp-section">
           <div class="sp-wrap">
             <div class="sp-avatars">{imgs_html}</div>
-            
+            <div class="sp-text">
+              <span><span class="sp-dot"></span>Used by 100+ Builders</span>
+            </div>
           </div>
           <p class="sp-blurb">
             Join the builders turning
