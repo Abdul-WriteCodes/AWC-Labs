@@ -15,6 +15,31 @@ from config import PROGRAM_NAME
 import uuid
 
 
+# ── Persistent flash messages ──────────────────────────────────
+# st.success/warning/error vanish on rerun. These helpers store the
+# message in session_state so it survives the rerun after a save,
+# then clears itself after being displayed once.
+
+def _flash(key: str, kind: str, msg: str):
+    """Queue a message to display on the next render."""
+    st.session_state[f"_flash_{key}"] = (kind, msg)
+
+
+def _show_flash(key: str):
+    """Render and consume a queued flash message if one exists."""
+    fkey = f"_flash_{key}"
+    if fkey in st.session_state:
+        kind, msg = st.session_state.pop(fkey)
+        if kind == "success":
+            st.success(msg)
+        elif kind == "warning":
+            st.warning(msg)
+        elif kind == "error":
+            st.error(msg)
+        elif kind == "info":
+            st.info(msg)
+
+
 def show():
     if not is_admin():
         _admin_login()
@@ -44,10 +69,10 @@ def show():
 
     # ── Programs ──────────────────────────────────────────────
     with tab_programs:
+        _show_flash("programs")
         st.markdown("### Programs")
         st.caption("Create programs, set one as active, delete old ones.")
 
-        # Active program banner
         if active_prog:
             st.success(f"**Active program:** {active_prog['name']}  ·  unit: **{active_prog['unit_label']}**")
         else:
@@ -55,7 +80,6 @@ def show():
 
         st.divider()
 
-        # ── Create new program ────────────────────────────────
         with st.expander("➕ Create new program", expanded=not all_programs):
             p_name  = st.text_input("Program name", placeholder="e.g. Crea8it AI Career Launch", key="new_prog_name")
             p_unit  = st.text_input("Unit label", placeholder="Week / Day / Module / Session / Sprint",
@@ -69,12 +93,11 @@ def show():
                     new_id = str(uuid.uuid4())[:8]
                     create_program(new_id, p_name.strip(), p_unit.strip(),
                                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                    st.success(f"✅ Program '{p_name.strip()}' created (ID: {new_id})")
+                    _flash("programs", "success", f"✅ Program '{p_name.strip()}' created (ID: {new_id})")
                     st.rerun()
 
         st.divider()
 
-        # ── Existing programs ─────────────────────────────────
         if not all_programs:
             st.info("No programs yet. Create one above.")
         else:
@@ -90,11 +113,11 @@ def show():
                     st.markdown(f"{badge}**{pname}**  ·  unit: *{punit}*  ·  `{pid}`")
                 with col_activate:
                     if not is_active:
-                        if st.button(f"Set active", key=f"activate_{pid}", type="primary"):
+                        if st.button("Set active", key=f"activate_{pid}", type="primary"):
                             set_active_program(pid, punit)
                             get_active_program_id.clear()
                             get_active_unit_label.clear()
-                            st.success(f"✅ '{pname}' is now active.")
+                            _flash("programs", "success", f"✅ '{pname}' is now active.")
                             st.rerun()
                 with col_delete:
                     if st.button("🗑️", key=f"del_prog_{pid}"):
@@ -106,7 +129,7 @@ def show():
                             if st.button("Yes, delete", key=f"confirm_del_prog_yes_{pid}", type="primary"):
                                 delete_program(pid)
                                 st.session_state.pop(f"confirm_del_prog_{pid}", None)
-                                st.success(f"Program '{pname}' deleted.")
+                                _flash("programs", "success", f"✅ Program '{pname}' deleted.")
                                 st.rerun()
                         with c2:
                             if st.button("Cancel", key=f"confirm_del_prog_no_{pid}"):
@@ -163,6 +186,7 @@ def show():
 
     # ── Prompts ───────────────────────────────────────────────
     with tab_prompts:
+        _show_flash("prompts")
         st.markdown("### Reflection prompts")
         st.caption("Write the question participants must answer after completing each unit's tasks.")
         if not PROGRAM_WEEKS:
@@ -177,12 +201,14 @@ def show():
                     if st.button("Save prompt", key=f"save_prompt_{w}", type="primary"):
                         if new_prompt.strip():
                             set_prompt(w, new_prompt.strip())
-                            st.success(f"✅ {unit_label} {w} prompt saved.")
+                            _flash("prompts", "success", f"✅ {unit_label} {w} prompt saved.")
+                            st.rerun()
                         else:
                             st.warning("Prompt cannot be empty.")
 
     # ── Reflections ───────────────────────────────────────────
     with tab_reflections:
+        _show_flash("reflections")
         st.markdown("### Participant reflections & feedback")
         reflections  = get_all_reflections()
         feedback_all = get_all_feedback()
@@ -219,13 +245,14 @@ def show():
                             save_feedback(ref_email, ref_week, feedback_input.strip(),
                                           datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                             get_all_feedback.clear()
-                            st.success("✅ Feedback saved.")
+                            _flash("reflections", "success", f"✅ Feedback saved for {name} · {unit_label} {ref_week}.")
                             st.rerun()
                         else:
                             st.warning("Feedback cannot be empty.")
 
     # ── Program Content ───────────────────────────────────────
     with tab_content:
+        _show_flash("content")
         st.markdown("### Program content")
         if not active_prog:
             st.info("No active program. Go to the Programs tab to create and activate one first.")
@@ -234,10 +261,9 @@ def show():
 
             MATERIAL_TYPES = ["book", "video", "article", "worksheet", "template"]
 
-            # ── Add new unit ──────────────────────────────────
             with st.expander(f"➕ Add a new {unit_label}", expanded=not PROGRAM_WEEKS):
-                existing_nums   = sorted(PROGRAM_WEEKS.keys())
-                suggested_num   = max(existing_nums) + 1 if existing_nums else 1
+                existing_nums = sorted(PROGRAM_WEEKS.keys())
+                suggested_num = max(existing_nums) + 1 if existing_nums else 1
 
                 new_num   = st.number_input(f"{unit_label} number", min_value=1, max_value=365,
                                             value=suggested_num, key="new_unit_num")
@@ -279,12 +305,11 @@ def show():
                     else:
                         save_program_week(active_pid, int(new_num), new_title.strip(),
                                           new_theme.strip(), new_mats, new_tasks)
-                        st.success(f"✅ {unit_label} {new_num} saved.")
+                        _flash("content", "success", f"✅ {unit_label} {new_num} — '{new_title.strip()}' saved.")
                         st.rerun()
 
             st.divider()
 
-            # ── Edit / delete existing units ──────────────────
             if not PROGRAM_WEEKS:
                 st.info(f"No {unit_label.lower()}s yet. Add one above.")
             else:
@@ -332,19 +357,19 @@ def show():
                                 else:
                                     save_program_week(active_pid, w, e_title.strip(), e_theme.strip(),
                                                       e_mats, e_tasks)
-                                    st.success(f"✅ {unit_label} {w} updated.")
+                                    _flash("content", "success", f"✅ {unit_label} {w} — '{e_title.strip()}' updated.")
                                     st.rerun()
                         with col_del:
                             if st.button("🗑️ Delete", key=f"del_unit_{w}"):
                                 st.session_state[f"confirm_del_unit_{w}"] = True
                             if st.session_state.get(f"confirm_del_unit_{w}"):
-                                st.warning(f"Delete {unit_label} {w}?")
+                                st.warning(f"Delete {unit_label} {w}? This cannot be undone.")
                                 c1, c2 = st.columns(2)
                                 with c1:
                                     if st.button("Yes", key=f"del_unit_yes_{w}", type="primary"):
                                         delete_week_from_program(active_pid, w)
                                         st.session_state.pop(f"confirm_del_unit_{w}", None)
-                                        st.success(f"{unit_label} {w} deleted.")
+                                        _flash("content", "success", f"✅ {unit_label} {w} deleted.")
                                         st.rerun()
                                 with c2:
                                     if st.button("Cancel", key=f"del_unit_no_{w}"):
@@ -353,6 +378,7 @@ def show():
 
     # ── Cohort control ────────────────────────────────────────
     with tab_control:
+        _show_flash("control")
         if not active_prog:
             st.info("No active program. Set one in the Programs tab.")
         else:
@@ -374,17 +400,16 @@ def show():
                         set_active_week(new_week)
                         st.session_state.pop("active_week", None)
                         st.session_state.pop("active_week_last_check", None)
-                        st.success(f"✅ {unit_label} {new_week} is now live for all participants.")
-                        import time as _time; _time.sleep(0.8)
+                        _flash("control", "success", f"✅ {unit_label} {new_week} is now live for all participants.")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Failed to update: {e}")
+                        _flash("control", "error", f"Failed to update: {e}")
+                        st.rerun()
             else:
                 st.warning(f"No {unit_label.lower()}s defined yet. Add content first.")
 
             st.divider()
 
-            # ── Export + wipe progress ────────────────────────
             st.markdown("### Switch program — export & wipe progress")
             st.caption("Export participant progress before switching to a new program, then wipe.")
             progress = get_all_progress()
@@ -406,7 +431,7 @@ def show():
                         if st.button("Yes, wipe progress", type="primary"):
                             wipe_all_progress()
                             st.session_state.pop("confirm_wipe", None)
-                            st.success("✅ Progress wiped. Ready for new program.")
+                            _flash("control", "success", "✅ Progress wiped. Ready for new program.")
                             st.rerun()
                     with c2:
                         if st.button("Cancel"):
