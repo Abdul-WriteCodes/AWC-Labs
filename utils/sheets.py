@@ -152,6 +152,13 @@ def _settings_ws():
     return get_sheet("Settings")
 
 
+def _settings_ws_live():
+    """Always returns a fresh worksheet handle — bypasses cache_resource.
+    Use this for reads that must reflect recent writes immediately."""
+    _ensure_sheet("Settings", 10, 2, ["key", "value"])
+    return get_spreadsheet().worksheet("Settings")
+
+
 # ── Active Week ────────────────────────────────────────────────
 
 @st.cache_data(ttl=30)
@@ -188,10 +195,17 @@ def get_active_program_id() -> str:
 
 
 def get_active_program_id_live() -> str:
-    # Session state is written immediately by set_active_program; sheet cache may lag
+    # Session state is written immediately by set_active_program on this instance.
+    # On a fresh session (new user / new admin login), read directly from sheet.
     if "_active_program_id" in st.session_state:
         return st.session_state["_active_program_id"]
-    return get_active_program_id()
+    try:
+        val = _settings_ws_live().acell("B2").value
+        pid = str(val).strip() if val else ""
+        st.session_state["_active_program_id"] = pid   # cache in session for this run
+        return pid
+    except Exception:
+        return get_active_program_id()
 
 
 def set_active_program(program_id: str, unit_label: str):
@@ -199,13 +213,14 @@ def set_active_program(program_id: str, unit_label: str):
     ws.update(range_name="B2", values=[[program_id]])
     ws.update(range_name="B3", values=[[unit_label]])
     ws.update(range_name="B1", values=[[1]])
-    # Bust all read caches
+    # Bust only the data caches — do NOT clear get_sheet (cache_resource);
+    # clearing it nukes all worksheet objects and causes Programs/ProgramContent
+    # to become invisible on the next load.
     get_active_program_id.clear()
     get_active_unit_label.clear()
     get_active_week.clear()
-    get_sheet.clear()  # worksheet object cache — forces fresh acell() reads
     # Write directly to session state so the very next rerun sees the new values
-    # without waiting for the sheet round-trip cache to warm up
+    # instantly without a sheet round-trip.
     st.session_state["_active_program_id"]     = program_id
     st.session_state["_active_unit_label"]     = unit_label
     st.session_state["active_week"]            = 1
@@ -224,7 +239,13 @@ def get_active_unit_label() -> str:
 def get_active_unit_label_live() -> str:
     if "_active_unit_label" in st.session_state:
         return st.session_state["_active_unit_label"]
-    return get_active_unit_label()
+    try:
+        val = _settings_ws_live().acell("B3").value
+        label = str(val).strip() if val else "Week"
+        st.session_state["_active_unit_label"] = label
+        return label
+    except Exception:
+        return get_active_unit_label()
 
 
 # ── Programs registry ──────────────────────────────────────────
