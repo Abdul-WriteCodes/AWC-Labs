@@ -80,7 +80,8 @@ def show():
     active_week = get_active_week_cached()
     progress    = get_progress(email)
 
-    total_tasks     = sum(len(PROGRAM_WEEKS[w]["tasks"]) for w in range(1, active_week + 1))
+    week_keys       = sorted(PROGRAM_WEEKS.keys())
+    total_tasks     = sum(len(PROGRAM_WEEKS[w]["tasks"]) for w in week_keys if w <= active_week)
     completed_tasks = sum(len(v) for v in progress.values())
     pct             = min(100, int((completed_tasks / total_tasks * 100) if total_tasks else 0))
 
@@ -94,10 +95,9 @@ def show():
     st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
 
     # ── Week tabs ─────────────────────────────────────────────
-    tabs = st.tabs([f"{unit_label} {w}" for w in range(1, TOTAL_WEEKS + 1)])
+    tabs = st.tabs([f"{unit_label} {w}" for w in week_keys])
 
-    for i, tab in enumerate(tabs):
-        week_num  = i + 1
+    for tab, week_num in zip(tabs, week_keys):
         week_data = PROGRAM_WEEKS[week_num]
         locked    = week_num > active_week
 
