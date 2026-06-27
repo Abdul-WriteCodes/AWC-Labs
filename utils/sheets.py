@@ -23,7 +23,7 @@ def get_sheet(worksheet_name: str):
 
 
 def _ensure_sheet(name: str, rows: int, cols: int, header: list) -> None:
-    """Create a worksheet with header if it doesn't exist.
+    """Create a worksheet with header if it does not exist.
     Never calls get_sheet.clear() — that nukes ALL cached worksheet handles.
     """
     try:
@@ -147,9 +147,9 @@ def wipe_all_progress():
     get_all_progress.clear()
 
 
-# ── Active Week (still stored in Settings — it's a cohort control, not config) ──
+# ── Active Week (Settings sheet) ───────────────────────────────
 # Settings sheet: two columns  key | value
-#   Row 2: active_week | <int>
+# active_week is stored as a key-value row, not a fixed cell address.
 
 def _settings_ws():
     _ensure_sheet("Settings", 10, 2, ["key", "value"])
@@ -189,8 +189,10 @@ def set_active_week(week: int):
 
 # ── Programs registry ──────────────────────────────────────────
 # Programs sheet columns: program_id | name | unit_label | created_at | is_active
-# is_active = "yes" for the one active program, "" for all others.
-# This is the single source of truth — no Settings cell dependency.
+#
+# is_active = "yes" for exactly one program, "" for all others.
+# This column IS the single source of truth for which program is active.
+# No Settings cells are involved — survives logout, new sessions, and redeploys.
 
 def _ensure_programs_sheet():
     _ensure_sheet("Programs", 100, 5,
@@ -198,7 +200,7 @@ def _ensure_programs_sheet():
 
 
 def _programs_ws():
-    """Always fetch a live handle so reads reflect recent writes."""
+    """Always return a live (non-cached) worksheet handle for writes."""
     _ensure_programs_sheet()
     try:
         return get_spreadsheet().worksheet("Programs")
@@ -211,7 +213,6 @@ def get_all_programs() -> list[dict]:
     try:
         _ensure_programs_sheet()
         records = get_sheet("Programs").get_all_records()
-        # Back-fill missing is_active key for rows written before this column existed
         for r in records:
             r.setdefault("is_active", "")
         return records
@@ -239,28 +240,11 @@ def delete_program(program_id: str):
     _delete_program_content(program_id)
 
 
-# ── Active Program — read/write via Programs sheet is_active column ────────────
-
-def get_active_program_id_live() -> str:
-    """
-    Read the active program ID directly from the Programs sheet every time.
-    No session state caching — the sheet IS the source of truth.
-    Short-circuits to a 30-second cache only if a live read fails.
-    """
-    try:
-        ws = _programs_ws()
-        records = ws.get_all_records()
-        for row in records:
-            if str(row.get("is_active", "")).strip().lower() == "yes":
-                return str(row.get("program_id", "")).strip()
-        return ""
-    except Exception:
-        return get_active_program_id()
-
+# ── Active Program — is_active column in Programs sheet ────────
 
 @st.cache_data(ttl=30)
 def get_active_program_id() -> str:
-    """Cached fallback — used only when a live sheet read fails."""
+    """Cached read — used as fallback when a live read fails."""
     try:
         _ensure_programs_sheet()
         records = get_sheet("Programs").get_all_records()
@@ -272,17 +256,19 @@ def get_active_program_id() -> str:
         return ""
 
 
-def get_active_unit_label_live() -> str:
-    """Return the unit_label of whichever program is currently active."""
+def get_active_program_id_live() -> str:
+    """
+    Live read — always goes straight to the sheet.
+    No session state involved, so logout/login never affects the result.
+    """
     try:
-        ws = _programs_ws()
-        records = ws.get_all_records()
+        records = _programs_ws().get_all_records()
         for row in records:
             if str(row.get("is_active", "")).strip().lower() == "yes":
-                return str(row.get("unit_label", "")).strip() or "Week"
-        return "Week"
+                return str(row.get("program_id", "")).strip()
+        return ""
     except Exception:
-        return get_active_unit_label()
+        return get_active_program_id()
 
 
 @st.cache_data(ttl=30)
@@ -298,57 +284,65 @@ def get_active_unit_label() -> str:
         return "Week"
 
 
+def get_active_unit_label_live() -> str:
+    try:
+        records = _programs_ws().get_all_records()
+        for row in records:
+            if str(row.get("is_active", "")).strip().lower() == "yes":
+                return str(row.get("unit_label", "")).strip() or "Week"
+        return "Week"
+    except Exception:
+        return get_active_unit_label()
+
+
 def set_active_program(program_id: str, unit_label: str):
     """
-    Mark program_id as active in the Programs sheet by writing 'yes' to its
-    is_active column and clearing 'yes' from all other rows.
-    This persists across all sessions and survives logout/login.
+    Persist the active program by writing 'yes' into the is_active column
+    of the Programs sheet for the chosen program, and '' for all others.
+
+    Uses update_cell row-by-row (not batch_update) for maximum reliability.
+    Automatically adds the is_active column if it does not exist yet.
     """
     ws = _programs_ws()
+
+    # Always fetch fresh values — never trust a cache for a write operation
     all_values = ws.get_all_values()
     if not all_values:
         return
 
     headers = [h.strip().lower() for h in all_values[0]]
-    try:
-        pid_col    = headers.index("program_id") + 1   # 1-indexed for gspread
-        active_col = headers.index("is_active")  + 1
-    except ValueError:
-        # is_active column doesn't exist yet — add it
-        ws.update_cell(1, len(headers) + 1, "is_active")
+
+    # Add is_active column header if the sheet predates this version
+    if "is_active" not in headers:
+        new_col_idx = len(headers) + 1   # 1-indexed
+        ws.update_cell(1, new_col_idx, "is_active")
+        # Re-fetch so headers reflect the newly added column
         all_values = ws.get_all_values()
         headers = [h.strip().lower() for h in all_values[0]]
-        pid_col    = headers.index("program_id") + 1
-        active_col = headers.index("is_active")  + 1
 
-    # Build batch update: set "yes" for the target row, "" for all others
-    updates = []
+    if "is_active" not in headers:
+        raise RuntimeError(
+            "Could not locate or create the 'is_active' column in the Programs sheet. "
+            "Please add it manually as column E header and try again."
+        )
+
+    active_col = headers.index("is_active") + 1   # 1-indexed for gspread
+
+    # Write "yes" for the target program, "" for everyone else
     for i, row in enumerate(all_values[1:], start=2):
-        if not row or not row[0].strip():
+        if not row or not str(row[0]).strip():
             continue
         val = "yes" if str(row[0]).strip() == program_id else ""
-        updates.append({"range": f"{_col_letter(active_col)}{i}", "values": [[val]]})
-
-    if updates:
-        ws.batch_update(updates)
+        ws.update_cell(i, active_col, val)
 
     # Reset active_week to 1 for the newly activated program
     set_active_week(1)
 
-    # Bust caches
+    # Bust read caches so the next request reflects the new state immediately
     get_all_programs.clear()
     get_active_program_id.clear()
     get_active_unit_label.clear()
     get_active_week.clear()
-
-
-def _col_letter(n: int) -> str:
-    """Convert 1-based column index to letter (1→A, 2→B, …, 26→Z, 27→AA)."""
-    result = ""
-    while n:
-        n, remainder = divmod(n - 1, 26)
-        result = chr(65 + remainder) + result
-    return result
 
 
 # ── Program Content ────────────────────────────────────────────
@@ -416,7 +410,8 @@ def save_program_week(program_id: str, week: int, title: str, theme: str,
         [program_id, week, "theme",  0, theme, ""],
     ]
     for idx, mat in enumerate(materials):
-        new_rows.append([program_id, week, "material", idx, mat.get("label", ""), mat.get("type", "article")])
+        new_rows.append([program_id, week, "material", idx,
+                         mat.get("label", ""), mat.get("type", "article")])
     for idx, task in enumerate(tasks):
         new_rows.append([program_id, week, "task", idx, task, ""])
 
