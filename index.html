@@ -1,11 +1,10 @@
-🐒
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>SaaStregy — Playbooks for Builders, Founders & Future Tech Professionals</title>
+<title>Crea8it— An Ecosystem for Builders, Founders & Future Tech Professionals</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -89,8 +88,9 @@ nav{
 }
 
 .btn-secondary{
-    border:1px solid #333;
-    color:white;
+    background-color: green;
+    border:1px solid yellow;
+    color: white;
 }
 
 .hero{
@@ -237,14 +237,39 @@ nav{
     grid-template-columns:1fr;
 }
 .card-image{
-    min-height:160px;
-    max-height:200px;
+    min-height:140px;
+    max-height:170px;
 }
 .card-body{
     padding:14px;
 }
 .card-body h3{
-    font-size:0.85rem;
+    font-size:0.95rem;
+    margin-bottom:6px;
+}
+.card-body p{
+    font-size:0.82rem;
+    margin-bottom:8px;
+}
+.card-footer{
+    margin-top:8px;
+}
+}
+
+/* ── 2-col bullet grid for program cards ── */
+.bullet-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px 12px;
+    margin:10px 0 14px;
+    font-size:0.82rem;
+    color:var(--muted);
+}
+
+@media(min-width:681px){
+.bullet-grid{
+    grid-template-columns:1fr;
+    font-size:0.9rem;
 }
 }
 
@@ -335,10 +360,90 @@ input{
 }
 
 footer{
-    padding:50px 0;
-    text-align:center;
-    color:var(--muted);
+    padding:60px 0 40px;
     border-top:1px solid var(--border);
+}
+
+.footer-inner{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+    text-align:center;
+}
+
+.footer-logo{
+    font-family:'Permanent Marker',cursive;
+    font-size:2rem;
+    color:var(--accent);
+    transform:rotate(-2deg);
+}
+
+.footer-tagline{
+    font-family:'Permanent Marker',cursive;
+    font-size:0.85rem;
+    color:var(--muted);
+    letter-spacing:3px;
+}
+
+.footer-links{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+}
+
+.footer-links a{
+    color:var(--text);
+    text-decoration:none;
+    font-size:0.9rem;
+    transition:.2s;
+}
+
+.footer-links a:hover{ color:var(--accent); }
+
+.footer-links span{ color:var(--border); }
+
+.footer-socials{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+
+.footer-socials a{
+    color:var(--muted);
+    text-decoration:none;
+    font-size:0.9rem;
+    transition:.2s;
+}
+
+.footer-socials a:hover{ color:var(--accent); }
+
+.footer-socials span{ color:var(--border); }
+
+.footer-cta{
+    display:inline-block;
+    background:rgba(255,183,3,.1);
+    border:1px solid rgba(255,183,3,.3);
+    color:var(--accent);
+    padding:12px 24px;
+    border-radius:12px;
+    text-decoration:none;
+    font-size:0.95rem;
+    transition:.3s;
+}
+
+.footer-cta:hover{
+    background:var(--accent);
+    color:black;
+}
+
+.footer-copy{
+    color:var(--muted);
+    font-size:0.8rem;
 }
 
 @media(max-width:768px){
@@ -454,6 +559,59 @@ input{
     .carousel-next{ right:-4px; }
 }
 
+/* ── Program Countdown ── */
+.countdown{
+    display:flex;
+    gap:8px;
+    align-items:center;
+}
+
+.cd-block{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    background:rgba(255,183,3,.1);
+    border:1px solid rgba(255,183,3,.25);
+    border-radius:8px;
+    padding:6px 10px;
+    min-width:44px;
+}
+
+.cd-num{
+    font-size:1.2rem;
+    font-weight:800;
+    color:var(--accent);
+    line-height:1;
+    font-family:'Inter',sans-serif;
+}
+
+.cd-label{
+    font-size:0.55rem;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-top:3px;
+}
+
+.cd-sep{
+    color:var(--accent);
+    font-weight:800;
+    font-size:1rem;
+    margin-bottom:12px;
+}
+
+.price-open{
+    font-size:1.1rem;
+    font-weight:800;
+    color:#22c55e;
+    animation: pulse-open 2s infinite;
+}
+
+@keyframes pulse-open{
+    0%,100%{ opacity:1; }
+    50%{ opacity:.6; }
+}
+
 </style>
 </head>
 <body>
@@ -461,17 +619,15 @@ input{
 <nav>
 <div class="container nav-wrapper">
 
-<div class="logo">SaaStregy</div>
+<div class="logo">Crea8it</div>
 
 <div class="nav-links">
-<a href="#">Books</a>
-<a href="#">Playbooks</a>
-<a href="#">Prints</a>
-<a href="#">About</a>
-<a href="#">Newsletter</a>
+<a href="#playbooks">Resources 📚</a>
+<a href="#testimonials">Achievement 🏆</a>
+<a href="#submit-request">Submit Request 📩</a>
 </div>
 
-<a href="#" class="btn btn-primary">Shop Collection</a>
+<a href="https://chat.whatsapp.com/Gbm13AqaNSt24MAxszzkcB" class="btn btn-primary">Join Crea8it🫂 </a>
 
 </div>
 </nav>
@@ -479,24 +635,111 @@ input{
 <section class="hero">
 <div class="container">
 
-<span class="badge">Join Builders, Founders & Tech Aspirants Using SaaStregy</span>
+<span class="badge">The Hub for Builders, Founders & Tech Aspirants who don't just dream — they EXECUTE & BUILD against all odds </span>
 
 <h1>BUILD.<br> LAUNCH. <br> WIN.</h1>
 
 <p>
-SaaStregy Encompasses Playbooks for Builders, Founders & Future Tech Professionals.<br><br>
-Discover practical strategies, proven frameworks and real-world lessons 
-for launching your career, validating ideas, building products and growing startups.
+
+Crea8it encompasses programs and playbooks that equips builders, founders, and future tech professionals with practical strategies, proven frameworks,
+and real-world lessons to launch careers, build products, and grow startups.
 </p>
 
 <div class="hero-buttons">
-<a href="playbooks" class="btn btn-primary">Explore Resources</a>
-<a href="#testimonials" class="btn btn-primary">Impacts & Achievements </a>
+<a href="#playbooks" class="btn btn-primary">Resources 📚</a>
+<a href="#programs" class="btn btn-secondary">Programs🚀<a/>
+<a href="https://crea8it.streamlit.app/" class="btn btn-secondary">Enter Labs 📟</a>
+<a href="#testimonials" class="btn btn-primary">Impacts 🏆</a>
+
+
 </div>
 
 </div>
 </section>
 
+
+<!---Programs--->
+<section id="programs" class="section">
+<div class="container">
+
+<span class="badge">Programs</span>
+<h2 class="section-title">Core Programs</h2>
+
+<div class="grid">
+
+<div class="card" data-launch="2026-07-11T09:00:00">
+    <div class="card-image">
+        <img src="assets/A1.jpeg" alt="Career Launch Accelerator">
+    </div>
+
+    <div class="card-body">
+        <div>
+            <h3> AI Career Acceleration </h3>
+            <p>A career launch and acceleration program designed for ambitious individuals who want to build valuable skills, create opportunities, and thrive in the age of Artificial Intelligence</p>
+            
+            <p style="color: green;font-weight:700; font-size:1.2rem;">Upcoming Program</p>
+            <p style="color: gold;font-weight: bold;"> Open Seminar 🎙</p>
+        </div>
+
+        <div class="card-footer">
+            <div class="price program-price">Comming Soon</div>
+            <a href="#" class="btn-buy">Register Here→</a>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="card">
+    <div class="card-image">
+        <img src="assets/B1.jpeg" alt="Career Launch Accelerator">
+    </div>
+
+    <div class="card-body">
+        <div>
+            <h3> Crea8it Build in Public Challenge</h3>
+            <p>  The Build in Public Challenge is a hands-on execution program that encourages builders to stop overthinking and start shipping</p>
+            
+        </div>
+
+        <div class="card-footer">
+            <div class="price program-price">Coming Soon</div>
+            <a href="#" class="btn-buy">Join Waitlist →</a>
+        </div>
+    </div>
+</div>
+
+
+
+
+<div class="card">
+    <div class="card-image">
+        <img src="assets/Z1.jpeg" alt="Startup Validation Lab">
+    </div>
+
+    <div class="card-body">
+        <div>
+            <h3>🧪 Zero to 1</h3>
+
+            <p>Zero to 1 is an idea validation and startup launch program for aspiring founders and indie hackers who want to build real businesses from scratch </p>
+
+            </p>
+        </div>
+
+        <div class="card-footer">
+            <div class="price program-price">Coming Soon</div>
+            <a href="#" class="btn-buy">Join Waitlist →</a>
+        </div>
+    </div>
+</div>
+
+</div>
+
+</section>
+
+<!--programs--->
+
+<!----Resources--->
 <section class="section">
 <section id="playbooks" class="section">
 <div class="container">
@@ -513,34 +756,41 @@ for launching your career, validating ideas, building products and growing start
     </div>
     <div class="card-body">
         <div>
-            <h3><span>📘 Enter AI</span>: A Comprehensive Guide for AI Career Launch</h3>
-            <p>Over 10 downloads📥 and counting. 40% of active readers🧑‍🏫 have been mentored and supported to successfully break into AI🚀 — no CS degree is not a barrier. Real steps🤸🏻, tested strategies🧩, real opportunities✨️.</p>
+            <h3><span>📘 Enter AI</span> </h3>
+            <p> A Comprehensive Guide for AI Career Launch
+
+            <br><br>
+            
+            ✓Over 10 downloads📥 and counting.<br>
+            ✓40% of active readers🧑‍🏫 have successfully break into AI🚀<br>
+            ✓No CS degree is not a barrier.<br>
+            ✓Contain Real steps🤸🏻, and Tested strategies🧩.
+            
+            </p>
         </div>
         <div class="card-footer">
             <div class="price">₦5,000</div>
-            <a href="https://flutterwave.com/pay/uuzhcwanejde" class="btn-buy">Get Playbook →</a>
+            <a href="https://flutterwave.com/pay/uuzhcwanejde" class="btn-buy">Get Book →</a>
         </div>
     </div>
 </div>
 
-<!--
-
-<div class="card">
+<div class="card" data-launch="2026-07-20T09:00:00">
     <div class="card-image">
-        <img src="assets/bootstrap-founder.jpg" alt="Bootstrap Founder Playbook">
+        <img src="assets/T2M.jpeg" alt="Bootstrap Founder Playbook">
     </div>
     <div class="card-body">
         <div>
-            <h3>Bootstrap Founder Playbook</h3>
-            <p>Build products with limited resources and maximum leverage. Frameworks for shipping fast, staying lean and finding your first customers.</p>
+            <h3>Talk to the Machine</h3>
+            <p>A comprehensive prompt engineering handbook for everyone.</p>
         </div>
         <div class="card-footer">
-            <div class="price">£29</div>
-            <a href="YOUR_PAYMENT_LINK_HERE" class="btn-buy">Get Playbook →</a>
+            <div class="price program-price">Available for Free</div>
+            <a href="#" class="btn-buy">Get Playbook →</a>
         </div>
     </div>
 </div>
-
+<!--
 <div class="card">
     <div class="card-image">
         <img src="assets/saas-growth-blueprint.jpg" alt="SaaS Growth Blueprint">
@@ -561,7 +811,11 @@ for launching your career, validating ideas, building products and growing start
 
 </div>
 -->
-    
+
+<!---Resources--->
+
+
+
 </section>
 
 <section class="section" style="padding-top:0;">
@@ -600,21 +854,23 @@ for launching your career, validating ideas, building products and growing start
 <div>
 <span class="badge">The Difference</span>
 
-<h2 class="section-title">Why SaaStregy?</h2>
+<h2 class="section-title">The Crea8it Way</h2>
 
 <p style="color:var(--muted);font-size:1.1rem;">
 No fake guru tactics.
-No recycled content.
+No clout chasing content.
+No theory without skin in the game.
 
 Just practical frameworks, documented lessons and
-battle-tested strategies from building products,
-launching projects and navigating modern tech careers.
+battle-tested strategies gained from actively building
+products, launching projects and carving a path
+through modern tech — in public.
 </p>
 
 </div>
 
 <div class="graffiti-box">
-Core Ment🧠lity<br><br>
+The Crea8it Way<br><br>
 → Build ⚙️<br>
 → Launch 🚀<br>
 → <s>Fail</s> Learn 🤸<br>
@@ -635,9 +891,9 @@ Core Ment🧠lity<br><br>
 
 <p style="color:var(--muted);">
 
-I am a 2x Bootstrap founder, AI Product Engineer/SaaS builder sharing what I learn while building products, launching experiments and navigating technology.
-
-Everything here is designed to shorten your learning curve.
+As a 2× bootstrap founder, AI Product Engineer, and SaaS builder,
+I designed this Lab as an ecosystem that helps ambitious builders launch careers, build products,
+and create opportunities from scratch using modern technology.
 </p>
 
 </div>
@@ -646,6 +902,7 @@ Everything here is designed to shorten your learning curve.
 </section>
 
 <section class="section">
+<section id="submit-request" class="section">
 <div class="container">
 
 <div class="newsletter">
@@ -668,8 +925,30 @@ Got an idea, a project or something worth addressing? Bring it. Let's have it �
 
 
 <footer>
-<div class="container">
-© 2026 SaaStregy — Built for builders.
+<div class="container footer-inner">
+
+    <div class="footer-logo">Crea8it</div>
+
+    <p class="footer-tagline">BUILD. LAUNCH. WIN.</p>
+
+    <nav class="footer-links">
+        <a href="#playbooks">Resources</a>
+        <span>•</span>
+        <a href="#programs">Programs</a>
+        <span>•</span>
+        <a href="#testimonials">Impacts</a>
+        <span>•</span>
+    </nav>
+
+    <div class="footer-socials">
+        <a href="https://twitter.com/abdul_git07" target="_blank" rel="noopener">𝕏 </a>
+        <span>•</span>
+        <a href="https://linkedin.com/in/anafiabdul" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+
+
+    <p class="footer-copy">© 2024 Crea8it — Built for builders.</p>
+
 </div>
 </footer>
 
@@ -714,5 +993,55 @@ Got an idea, a project or something worth addressing? Bring it. Let's have it �
 })();
 </script>
 
+<script>
+(function(){
+    function pad(n){ return String(n).padStart(2,'0'); }
+
+    function buildCountdown(el, launchDate){
+        function tick(){
+            const now  = new Date();
+            const diff = launchDate - now;
+
+            if(diff <= 0){
+                // Program is live
+                el.innerHTML = '<span class="price-open">🟢 Now Open!</span>';
+                return;
+            }
+
+            const days  = Math.floor(diff / (1000*60*60*24));
+            const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+            const mins  = Math.floor((diff % (1000*60*60))    / (1000*60));
+            const secs  = Math.floor((diff % (1000*60))       / 1000);
+
+            el.innerHTML = `
+                <div class="countdown">
+                    <div class="cd-block"><span class="cd-num">${pad(days)}</span><span class="cd-label">Days</span></div>
+                    <span class="cd-sep">:</span>
+                    <div class="cd-block"><span class="cd-num">${pad(hours)}</span><span class="cd-label">Hrs</span></div>
+                    <span class="cd-sep">:</span>
+                    <div class="cd-block"><span class="cd-num">${pad(mins)}</span><span class="cd-label">Min</span></div>
+                    <span class="cd-sep">:</span>
+                    <div class="cd-block"><span class="cd-num">${pad(secs)}</span><span class="cd-label">Sec</span></div>
+                </div>`;
+        }
+
+        tick();
+        setInterval(tick, 1000);
+    }
+
+    // Find every program card that has a data-launch date
+    document.querySelectorAll('.card[data-launch]').forEach(function(card){
+        const raw = card.getAttribute('data-launch');
+        if(!raw) return;
+
+        const launchDate = new Date(raw);
+        if(isNaN(launchDate)) return;
+
+        const priceEl = card.querySelector('.program-price');
+        if(priceEl) buildCountdown(priceEl, launchDate);
+    });
+})();
+</script>
+
 </body>
-</html>
+    </html>
