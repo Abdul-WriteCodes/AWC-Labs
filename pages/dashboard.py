@@ -8,9 +8,10 @@ from utils.theme import (
 from utils.sheets import (
     get_progress_from_sheet, mark_task_done, get_active_week_live,
     get_reflection, submit_reflection, get_feedback, get_prompt,
+    get_program_weeks_from_sheet,
 )
-from data.content import PROGRAM_WEEKS, AI_CAREER_PATHS
-from config import PROGRAM_NAME, TOTAL_WEEKS
+from data.content import PROGRAM_WEEKS as PROGRAM_WEEKS_STATIC, AI_CAREER_PATHS
+from config import PROGRAM_NAME
 import time
 
 
@@ -39,6 +40,11 @@ def get_reflection_cached(email: str, week: int) -> dict | None:
 
 def show():
     apply_css()
+
+    # Load program content — sheet takes precedence over static fallback
+    _live = get_program_weeks_from_sheet()
+    PROGRAM_WEEKS = _live if _live else PROGRAM_WEEKS_STATIC
+    TOTAL_WEEKS   = len(PROGRAM_WEEKS)
 
     # ── Celebration handler (runs at top of next rerun) ───────
     celebrate = st.session_state.pop("celebrate", None)
