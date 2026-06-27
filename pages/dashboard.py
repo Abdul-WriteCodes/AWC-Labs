@@ -95,6 +95,10 @@ def show():
     st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
 
     # ── Week tabs ─────────────────────────────────────────────
+    if not week_keys:
+        st.info("No program content has been published yet. Check back soon.")
+        return
+
     tabs = st.tabs([f"{unit_label} {w}" for w in week_keys])
 
     for tab, week_num in zip(tabs, week_keys):
