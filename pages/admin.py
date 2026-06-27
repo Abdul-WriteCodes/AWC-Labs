@@ -7,7 +7,8 @@ from utils.sheets import (
     get_prompt, set_prompt, get_all_reflections, get_all_feedback, save_feedback,
     get_all_programs, create_program, delete_program,
     get_program_weeks, save_program_week, delete_week_from_program,
-    get_active_program_id, set_active_program, get_active_unit_label,
+    get_active_program_id, get_active_program_id_live, set_active_program,
+    get_active_unit_label, get_active_unit_label_live,
     wipe_all_progress,
 )
 from config import PROGRAM_NAME
@@ -29,8 +30,8 @@ def show():
     st.divider()
 
     # Resolve active program
-    active_pid   = get_active_program_id()
-    unit_label   = get_active_unit_label() or "Week"
+    active_pid   = get_active_program_id_live()
+    unit_label   = get_active_unit_label_live() or "Week"
     all_programs = get_all_programs()
     prog_map     = {p["program_id"]: p for p in all_programs}
     active_prog  = prog_map.get(active_pid)
