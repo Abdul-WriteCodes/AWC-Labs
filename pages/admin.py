@@ -7,8 +7,8 @@ from utils.sheets import (
     get_prompt, set_prompt, get_all_reflections, get_all_feedback, save_feedback,
     get_all_programs, create_program, delete_program,
     get_program_weeks, save_program_week, delete_week_from_program,
-    get_active_program_id, get_active_program_id_live, set_active_program,
-    get_active_unit_label, get_active_unit_label_live,
+    get_active_program_id_live, set_active_program,
+    get_active_unit_label_live,
     wipe_all_progress,
 )
 from config import PROGRAM_NAME
@@ -115,8 +115,6 @@ def show():
                     if not is_active:
                         if st.button("Set active", key=f"activate_{pid}", type="primary"):
                             set_active_program(pid, punit)
-                            get_active_program_id.clear()
-                            get_active_unit_label.clear()
                             _flash("programs", "success", f"✅ '{pname}' is now active.")
                             st.rerun()
                 with col_delete:
