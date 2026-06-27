@@ -246,3 +246,119 @@ def get_all_feedback() -> list[dict]:
         return get_sheet("Feedback").get_all_records()
     except Exception:
         return []
+
+
+# ── Program Content (dynamic weeks + activities) ───────────────
+
+WS_PROGRAM = "ProgramContent"
+
+@st.cache_data(ttl=30)
+def get_program_weeks_from_sheet() -> dict:
+    """
+    Load all weeks + their materials and tasks from the ProgramContent sheet.
+    Returns a dict shaped like PROGRAM_WEEKS in data/content.py.
+    Falls back to empty dict on error.
+
+    Sheet columns: week | type | order | value | extra
+      type = "title" | "theme" | "material" | "task"
+      order = sort order within the week for materials/tasks
+      value = the text
+      extra = material type icon key (book/video/article/worksheet/template) — only for "material" rows
+    """
+    try:
+        records = get_sheet(WS_PROGRAM).get_all_records()
+    except Exception:
+        return {}
+
+    weeks: dict = {}
+    for row in records:
+        w = int(row.get("week", 0))
+        if w == 0:
+            continue
+        if w not in weeks:
+            weeks[w] = {"title": "", "theme": "", "materials": [], "tasks": []}
+        rtype = str(row.get("type", "")).strip().lower()
+        value = str(row.get("value", "")).strip()
+        extra = str(row.get("extra", "")).strip()
+        if rtype == "title":
+            weeks[w]["title"] = value
+        elif rtype == "theme":
+            weeks[w]["theme"] = value
+        elif rtype == "material":
+            weeks[w]["materials"].append({"type": extra or "article", "label": value})
+        elif rtype == "task":
+            weeks[w]["tasks"].append(value)
+    return weeks
+
+
+def save_program_week(week: int, title: str, theme: str, materials: list[dict], tasks: list[str]):
+    """
+    Full replace of a week's rows in ProgramContent.
+    Deletes all existing rows for `week`, then appends fresh ones.
+    """
+    ws = get_sheet(WS_PROGRAM)
+    all_values = ws.get_all_values()
+    if not all_values:
+        # Create header row
+        ws.append_row(["week", "type", "order", "value", "extra"])
+        all_values = [["week", "type", "order", "value", "extra"]]
+
+    # Find and delete rows belonging to this week (bottom-up to preserve indices)
+    rows_to_delete = []
+    for i, row in enumerate(all_values[1:], start=2):
+        try:
+            if int(row[0]) == week:
+                rows_to_delete.append(i)
+        except (ValueError, IndexError):
+            pass
+    for row_i in reversed(rows_to_delete):
+        ws.delete_rows(row_i)
+
+    # Append fresh rows
+    new_rows = [
+        [week, "title",  0, title, ""],
+        [week, "theme",  0, theme, ""],
+    ]
+    for idx, mat in enumerate(materials):
+        new_rows.append([week, "material", idx, mat.get("label", ""), mat.get("type", "article")])
+    for idx, task in enumerate(tasks):
+        new_rows.append([week, "task", idx, task, ""])
+
+    if new_rows:
+        ws.append_rows(new_rows, value_input_option="RAW")
+
+    get_program_weeks_from_sheet.clear()
+
+
+def delete_program_week(week: int):
+    """Remove all rows for a week from ProgramContent."""
+    ws = get_sheet(WS_PROGRAM)
+    all_values = ws.get_all_values()
+    rows_to_delete = []
+    for i, row in enumerate(all_values[1:], start=2):
+        try:
+            if int(row[0]) == week:
+                rows_to_delete.append(i)
+        except (ValueError, IndexError):
+            pass
+    for row_i in reversed(rows_to_delete):
+        ws.delete_rows(row_i)
+    get_program_weeks_from_sheet.clear()
+
+
+def get_total_weeks_from_sheet() -> int:
+    """Derive total weeks from whatever is in ProgramContent."""
+    weeks = get_program_weeks_from_sheet()
+    return max(weeks.keys()) if weeks else 0
+
+
+def ensure_program_content_sheet():
+    """Create ProgramContent sheet with header if it doesn't exist yet."""
+    try:
+        get_sheet(WS_PROGRAM)
+    except Exception:
+        ss = get_spreadsheet()
+        ws = ss.add_worksheet(title=WS_PROGRAM, rows=500, cols=5)
+        ws.append_row(["week", "type", "order", "value", "extra"])
+        # Invalidate the cached worksheet object so next call re-fetches
+        get_sheet.clear()
