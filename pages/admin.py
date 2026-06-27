@@ -114,8 +114,11 @@ def show():
                 with col_activate:
                     if not is_active:
                         if st.button("Set active", key=f"activate_{pid}", type="primary"):
-                            set_active_program(pid, punit)
-                            _flash("programs", "success", f"✅ '{pname}' is now active.")
+                            try:
+                                set_active_program(pid, punit)
+                                _flash("programs", "success", f"✅ '{pname}' is now active.")
+                            except Exception as e:
+                                _flash("programs", "error", f"❌ Failed to activate: {e}")
                             st.rerun()
                 with col_delete:
                     if st.button("🗑️", key=f"del_prog_{pid}"):
