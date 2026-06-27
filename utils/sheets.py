@@ -24,29 +24,19 @@ def get_sheet(worksheet_name: str):
 
 def _ensure_sheet(name: str, rows: int, cols: int, header: list) -> None:
     """Create a worksheet with header if it doesn't exist.
-
-    IMPORTANT: never call get_sheet.clear() here — that nukes the
-    cache_resource for ALL worksheets and can cause the Settings sheet
-    to be re-fetched as a brand-new blank sheet, wiping B1/B2/B3.
-    Instead we open the spreadsheet directly and let the next get_sheet()
-    call re-populate its own cache entry naturally.
+    Never calls get_sheet.clear() — that nukes ALL cached worksheet handles.
     """
     try:
         get_sheet(name)
-        return  # sheet already exists, nothing to do
+        return  # already exists
     except Exception:
         pass
-    # Sheet doesn't exist yet — create it without touching the resource cache.
     try:
         ss = get_spreadsheet()
         ws = ss.add_worksheet(title=name, rows=rows, cols=cols)
         ws.append_row(header)
-        # Do NOT call get_sheet.clear() — only invalidate the single entry
-        # for this sheet name so the next get_sheet(name) re-fetches it.
-        # gspread cache_resource is keyed per worksheet_name; we bypass it
-        # by calling the underlying spreadsheet directly above, so no clear needed.
     except Exception:
-        pass  # sheet may have been created by a concurrent session; silently ignore
+        pass  # concurrent session may have created it; silently ignore
 
 
 # ── Payment Codes ──────────────────────────────────────────────
@@ -149,7 +139,7 @@ def get_all_progress() -> list[dict]:
 
 
 def wipe_all_progress():
-    """Delete all data rows from Progress sheet (keep header). Used when switching programs."""
+    """Delete all data rows from Progress sheet (keep header)."""
     ws = get_sheet(WS_PROGRESS)
     all_values = ws.get_all_values()
     if len(all_values) > 1:
@@ -157,147 +147,87 @@ def wipe_all_progress():
     get_all_progress.clear()
 
 
-# ── Settings helpers ───────────────────────────────────────────
-# Settings sheet layout:
-#   B1 = active_week  (int)
-#   B2 = active_program_id  (str)
-#   B3 = active_unit_label  (str, e.g. "Week" / "Day" / "Module")
+# ── Active Week (still stored in Settings — it's a cohort control, not config) ──
+# Settings sheet: two columns  key | value
+#   Row 2: active_week | <int>
 
 def _settings_ws():
-    _ensure_sheet("Settings", 10, 2, ["key", "value"])
-    return get_sheet("Settings")
-
-
-def _settings_ws_live():
-    """Always returns a fresh worksheet handle — bypasses cache_resource.
-    Use this for reads that must reflect recent writes immediately.
-
-    Falls back to the cached handle if a live fetch fails, so a transient
-    network hiccup never wipes the active-program state.
-    """
     _ensure_sheet("Settings", 10, 2, ["key", "value"])
     try:
         return get_spreadsheet().worksheet("Settings")
     except Exception:
-        # Transient failure — fall back to cached handle rather than
-        # letting _ensure_sheet recreate the sheet with blank data.
         return get_sheet("Settings")
 
-
-# ── Active Week ────────────────────────────────────────────────
 
 @st.cache_data(ttl=30)
 def get_active_week() -> int:
     try:
-        val = _settings_ws().acell("B1").value
-        return int(val) if val else 1
+        records = _settings_ws().get_all_records()
+        for row in records:
+            if str(row.get("key", "")).strip().lower() == "active_week":
+                val = row.get("value", "")
+                return int(val) if val else 1
     except Exception:
-        return 1
+        pass
+    return 1
 
 
 def set_active_week(week: int):
-    _settings_ws().update(range_name="B1", values=[[week]])
-    get_active_week.clear()
-
-
-def get_active_week_live() -> int:
-    try:
-        val = _settings_ws().acell("B1").value
-        return int(val) if val else 1
-    except Exception:
-        return 1
-
-
-# ── Active Program ─────────────────────────────────────────────
-
-@st.cache_data(ttl=30)
-def get_active_program_id() -> str:
-    try:
-        val = _settings_ws().acell("B2").value
-        return str(val).strip() if val else ""
-    except Exception:
-        return ""
-
-
-def get_active_program_id_live() -> str:
-    # Session state is written immediately by set_active_program on this instance.
-    # On a fresh session (new user / new admin login), read directly from sheet.
-    if "_active_program_id" in st.session_state:
-        return st.session_state["_active_program_id"]
-    try:
-        val = _settings_ws_live().acell("B2").value
-        pid = str(val).strip() if val else ""
-        st.session_state["_active_program_id"] = pid   # cache in session for this run
-        return pid
-    except Exception:
-        return get_active_program_id()
-
-
-def set_active_program(program_id: str, unit_label: str):
     ws = _settings_ws()
-    ws.update(range_name="B2", values=[[program_id]])
-    ws.update(range_name="B3", values=[[unit_label]])
-    ws.update(range_name="B1", values=[[1]])
-    # Bust only the data caches — do NOT clear get_sheet (cache_resource);
-    # clearing it nukes all worksheet objects and causes Programs/ProgramContent
-    # to become invisible on the next load.
-    get_active_program_id.clear()
-    get_active_unit_label.clear()
+    try:
+        records = ws.get_all_records()
+        for i, row in enumerate(records, start=2):
+            if str(row.get("key", "")).strip().lower() == "active_week":
+                ws.update_cell(i, 2, week)
+                get_active_week.clear()
+                return
+        ws.append_row(["active_week", week])
+    except Exception:
+        pass
     get_active_week.clear()
-    # Write directly to session state so the very next rerun sees the new values
-    # instantly without a sheet round-trip.
-    st.session_state["_active_program_id"]     = program_id
-    st.session_state["_active_unit_label"]     = unit_label
-    st.session_state["active_week"]            = 1
-    st.session_state["active_week_last_check"] = 0
-
-
-@st.cache_data(ttl=30)
-def get_active_unit_label() -> str:
-    try:
-        val = _settings_ws().acell("B3").value
-        return str(val).strip() if val else "Week"
-    except Exception:
-        return "Week"
-
-
-def get_active_unit_label_live() -> str:
-    if "_active_unit_label" in st.session_state:
-        return st.session_state["_active_unit_label"]
-    try:
-        val = _settings_ws_live().acell("B3").value
-        label = str(val).strip() if val else "Week"
-        st.session_state["_active_unit_label"] = label
-        return label
-    except Exception:
-        return get_active_unit_label()
 
 
 # ── Programs registry ──────────────────────────────────────────
+# Programs sheet columns: program_id | name | unit_label | created_at | is_active
+# is_active = "yes" for the one active program, "" for all others.
+# This is the single source of truth — no Settings cell dependency.
 
 def _ensure_programs_sheet():
-    _ensure_sheet("Programs", 100, 4, ["program_id", "name", "unit_label", "created_at"])
+    _ensure_sheet("Programs", 100, 5,
+                  ["program_id", "name", "unit_label", "created_at", "is_active"])
+
+
+def _programs_ws():
+    """Always fetch a live handle so reads reflect recent writes."""
+    _ensure_programs_sheet()
+    try:
+        return get_spreadsheet().worksheet("Programs")
+    except Exception:
+        return get_sheet("Programs")
 
 
 @st.cache_data(ttl=30)
 def get_all_programs() -> list[dict]:
     try:
         _ensure_programs_sheet()
-        return get_sheet("Programs").get_all_records()
+        records = get_sheet("Programs").get_all_records()
+        # Back-fill missing is_active key for rows written before this column existed
+        for r in records:
+            r.setdefault("is_active", "")
+        return records
     except Exception:
         return []
 
 
 def create_program(program_id: str, name: str, unit_label: str, created_at: str):
     _ensure_programs_sheet()
-    get_sheet("Programs").append_row([program_id, name, unit_label, created_at])
+    get_sheet("Programs").append_row([program_id, name, unit_label, created_at, ""])
     get_all_programs.clear()
 
 
 def delete_program(program_id: str):
     """Delete program from registry and all its content rows."""
-    # Remove from Programs sheet
-    ws = get_sheet("Programs")
+    ws = _programs_ws()
     all_values = ws.get_all_values()
     rows_to_delete = []
     for i, row in enumerate(all_values[1:], start=2):
@@ -306,9 +236,119 @@ def delete_program(program_id: str):
     for r in reversed(rows_to_delete):
         ws.delete_rows(r)
     get_all_programs.clear()
-
-    # Remove its content
     _delete_program_content(program_id)
+
+
+# ── Active Program — read/write via Programs sheet is_active column ────────────
+
+def get_active_program_id_live() -> str:
+    """
+    Read the active program ID directly from the Programs sheet every time.
+    No session state caching — the sheet IS the source of truth.
+    Short-circuits to a 30-second cache only if a live read fails.
+    """
+    try:
+        ws = _programs_ws()
+        records = ws.get_all_records()
+        for row in records:
+            if str(row.get("is_active", "")).strip().lower() == "yes":
+                return str(row.get("program_id", "")).strip()
+        return ""
+    except Exception:
+        return get_active_program_id()
+
+
+@st.cache_data(ttl=30)
+def get_active_program_id() -> str:
+    """Cached fallback — used only when a live sheet read fails."""
+    try:
+        _ensure_programs_sheet()
+        records = get_sheet("Programs").get_all_records()
+        for row in records:
+            if str(row.get("is_active", "")).strip().lower() == "yes":
+                return str(row.get("program_id", "")).strip()
+        return ""
+    except Exception:
+        return ""
+
+
+def get_active_unit_label_live() -> str:
+    """Return the unit_label of whichever program is currently active."""
+    try:
+        ws = _programs_ws()
+        records = ws.get_all_records()
+        for row in records:
+            if str(row.get("is_active", "")).strip().lower() == "yes":
+                return str(row.get("unit_label", "")).strip() or "Week"
+        return "Week"
+    except Exception:
+        return get_active_unit_label()
+
+
+@st.cache_data(ttl=30)
+def get_active_unit_label() -> str:
+    try:
+        _ensure_programs_sheet()
+        records = get_sheet("Programs").get_all_records()
+        for row in records:
+            if str(row.get("is_active", "")).strip().lower() == "yes":
+                return str(row.get("unit_label", "")).strip() or "Week"
+        return "Week"
+    except Exception:
+        return "Week"
+
+
+def set_active_program(program_id: str, unit_label: str):
+    """
+    Mark program_id as active in the Programs sheet by writing 'yes' to its
+    is_active column and clearing 'yes' from all other rows.
+    This persists across all sessions and survives logout/login.
+    """
+    ws = _programs_ws()
+    all_values = ws.get_all_values()
+    if not all_values:
+        return
+
+    headers = [h.strip().lower() for h in all_values[0]]
+    try:
+        pid_col    = headers.index("program_id") + 1   # 1-indexed for gspread
+        active_col = headers.index("is_active")  + 1
+    except ValueError:
+        # is_active column doesn't exist yet — add it
+        ws.update_cell(1, len(headers) + 1, "is_active")
+        all_values = ws.get_all_values()
+        headers = [h.strip().lower() for h in all_values[0]]
+        pid_col    = headers.index("program_id") + 1
+        active_col = headers.index("is_active")  + 1
+
+    # Build batch update: set "yes" for the target row, "" for all others
+    updates = []
+    for i, row in enumerate(all_values[1:], start=2):
+        if not row or not row[0].strip():
+            continue
+        val = "yes" if str(row[0]).strip() == program_id else ""
+        updates.append({"range": f"{_col_letter(active_col)}{i}", "values": [[val]]})
+
+    if updates:
+        ws.batch_update(updates)
+
+    # Reset active_week to 1 for the newly activated program
+    set_active_week(1)
+
+    # Bust caches
+    get_all_programs.clear()
+    get_active_program_id.clear()
+    get_active_unit_label.clear()
+    get_active_week.clear()
+
+
+def _col_letter(n: int) -> str:
+    """Convert 1-based column index to letter (1→A, 2→B, …, 26→Z, 27→AA)."""
+    result = ""
+    while n:
+        n, remainder = divmod(n - 1, 26)
+        result = chr(65 + remainder) + result
+    return result
 
 
 # ── Program Content ────────────────────────────────────────────
@@ -324,10 +364,7 @@ def _ensure_program_content_sheet():
 
 @st.cache_data(ttl=30)
 def get_program_weeks(program_id: str) -> dict:
-    """
-    Load weeks + materials + tasks for a specific program_id.
-    Returns dict keyed by week number.
-    """
+    """Load weeks + materials + tasks for a specific program_id."""
     _ensure_program_content_sheet()
     try:
         records = get_sheet(WS_PROGRAM).get_all_records()
