@@ -8,7 +8,7 @@ from utils.theme import (
 from utils.sheets import (
     get_progress_from_sheet, mark_task_done, get_active_week_live,
     get_reflection, submit_reflection, get_feedback, get_prompt,
-    get_program_weeks, get_active_program_id, get_active_unit_label,
+    get_program_weeks, get_active_program_id_live, get_active_unit_label_live,
 )
 from config import PROGRAM_NAME
 import time
@@ -41,10 +41,10 @@ def show():
     apply_css()
 
     # Load active program content
-    active_pid   = get_active_program_id()
+    active_pid   = get_active_program_id_live()
     PROGRAM_WEEKS = get_program_weeks(active_pid) if active_pid else {}
     TOTAL_WEEKS   = len(PROGRAM_WEEKS)
-    unit_label    = get_active_unit_label() or "Week"
+    unit_label    = get_active_unit_label_live() or "Week"
 
     # ── Celebration handler (runs at top of next rerun) ───────
     celebrate = st.session_state.pop("celebrate", None)
