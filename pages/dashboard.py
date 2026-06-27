@@ -8,9 +8,8 @@ from utils.theme import (
 from utils.sheets import (
     get_progress_from_sheet, mark_task_done, get_active_week_live,
     get_reflection, submit_reflection, get_feedback, get_prompt,
-    get_program_weeks_from_sheet,
+    get_program_weeks, get_active_program_id, get_active_unit_label,
 )
-from data.content import PROGRAM_WEEKS as PROGRAM_WEEKS_STATIC, AI_CAREER_PATHS
 from config import PROGRAM_NAME
 import time
 
@@ -41,20 +40,21 @@ def get_reflection_cached(email: str, week: int) -> dict | None:
 def show():
     apply_css()
 
-    # Load program content — sheet takes precedence over static fallback
-    _live = get_program_weeks_from_sheet()
-    PROGRAM_WEEKS = _live if _live else PROGRAM_WEEKS_STATIC
+    # Load active program content
+    active_pid   = get_active_program_id()
+    PROGRAM_WEEKS = get_program_weeks(active_pid) if active_pid else {}
     TOTAL_WEEKS   = len(PROGRAM_WEEKS)
+    unit_label    = get_active_unit_label() or "Week"
 
     # ── Celebration handler (runs at top of next rerun) ───────
     celebrate = st.session_state.pop("celebrate", None)
     if celebrate == "tasks":
         w = st.session_state.pop("celebrate_week", "")
-        st.toast(f"Week {w} tasks complete! Now write your reflection 🎉", icon="🏅")
+        st.toast(f"{unit_label} {w} tasks complete! Now write your reflection 🎉", icon="🏅")
         st.balloons()
     elif celebrate == "reflection":
         w = st.session_state.pop("celebrate_week", "")
-        st.toast(f"Week {w} reflection submitted — great work! 🙌", icon="📝")
+        st.toast(f"{unit_label} {w} reflection submitted — great work! 🙌", icon="📝")
         st.balloons()
     elif celebrate == "task_single":
         st.toast("Task marked complete!", icon="✅")
@@ -85,7 +85,7 @@ def show():
     pct             = min(100, int((completed_tasks / total_tasks * 100) if total_tasks else 0))
 
     col_a, col_b, col_c = st.columns(3)
-    with col_a: kpi_card("Current week",   f"Week {active_week}", icon="🗓")
+    with col_a: kpi_card("Current unit",   f"{unit_label} {active_week}", icon="🗓")
     with col_b: kpi_card("Tasks done",     f"{completed_tasks}/{total_tasks}", icon="✅")
     with col_c: kpi_card("Progress",       f"{pct}%", icon="📈")
 
@@ -94,7 +94,7 @@ def show():
     st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
 
     # ── Week tabs ─────────────────────────────────────────────
-    tabs = st.tabs([f"Week {w}" for w in range(1, TOTAL_WEEKS + 1)])
+    tabs = st.tabs([f"{unit_label} {w}" for w in range(1, TOTAL_WEEKS + 1)])
 
     for i, tab in enumerate(tabs):
         week_num  = i + 1
@@ -171,13 +171,13 @@ def show():
                 st.markdown(f"""
 <div class="alert-info">
   ✏️ Complete <strong>{remaining} more task{"s" if remaining > 1 else ""}</strong>
-  to unlock this week's reflection.
+  to unlock this unit's reflection.
 </div>""", unsafe_allow_html=True)
 
             elif reflection:
                 st.markdown(f"""
 <div class="alert-success">
-  ✅ Week {week_num} complete — great work, {first_name}!
+  ✅ {unit_label} {week_num} complete — great work, {first_name}!
 </div>""", unsafe_allow_html=True)
 
                 with st.expander("📝 Your reflection"):
@@ -234,15 +234,3 @@ def show():
             st.session_state.pop("active_week", None)
             st.session_state.pop("active_week_last_check", None)
             st.rerun()
-
-    # ── Career paths reference ────────────────────────────────
-    st.markdown("<div style='margin-top:8px;'></div>", unsafe_allow_html=True)
-    with st.expander("🧭 AI career paths — quick reference"):
-        for path in AI_CAREER_PATHS:
-            st.markdown(
-                f'<div style="padding:8px 0;border-bottom:1px solid #1F2D3D;">'
-                f'<span style="color:#F5A623;font-weight:600;font-size:0.88rem;">{path["title"]}</span>'
-                f'<span style="color:#4A6080;font-size:0.85rem;"> — {path["desc"]}</span>'
-                f'</div>',
-                unsafe_allow_html=True
-            )
