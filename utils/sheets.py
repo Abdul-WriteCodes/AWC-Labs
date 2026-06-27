@@ -187,15 +187,29 @@ def get_active_program_id() -> str:
         return ""
 
 
+def get_active_program_id_live() -> str:
+    # Session state is written immediately by set_active_program; sheet cache may lag
+    if "_active_program_id" in st.session_state:
+        return st.session_state["_active_program_id"]
+    return get_active_program_id()
+
+
 def set_active_program(program_id: str, unit_label: str):
     ws = _settings_ws()
     ws.update(range_name="B2", values=[[program_id]])
     ws.update(range_name="B3", values=[[unit_label]])
+    ws.update(range_name="B1", values=[[1]])
+    # Bust all read caches
     get_active_program_id.clear()
     get_active_unit_label.clear()
-    # Reset active week to 1 whenever program switches
-    ws.update(range_name="B1", values=[[1]])
     get_active_week.clear()
+    get_sheet.clear()  # worksheet object cache — forces fresh acell() reads
+    # Write directly to session state so the very next rerun sees the new values
+    # without waiting for the sheet round-trip cache to warm up
+    st.session_state["_active_program_id"]     = program_id
+    st.session_state["_active_unit_label"]     = unit_label
+    st.session_state["active_week"]            = 1
+    st.session_state["active_week_last_check"] = 0
 
 
 @st.cache_data(ttl=30)
@@ -205,6 +219,12 @@ def get_active_unit_label() -> str:
         return str(val).strip() if val else "Week"
     except Exception:
         return "Week"
+
+
+def get_active_unit_label_live() -> str:
+    if "_active_unit_label" in st.session_state:
+        return st.session_state["_active_unit_label"]
+    return get_active_unit_label()
 
 
 # ── Programs registry ──────────────────────────────────────────
