@@ -23,14 +23,30 @@ def get_sheet(worksheet_name: str):
 
 
 def _ensure_sheet(name: str, rows: int, cols: int, header: list) -> None:
-    """Create a worksheet with header if it doesn't exist."""
+    """Create a worksheet with header if it doesn't exist.
+
+    IMPORTANT: never call get_sheet.clear() here — that nukes the
+    cache_resource for ALL worksheets and can cause the Settings sheet
+    to be re-fetched as a brand-new blank sheet, wiping B1/B2/B3.
+    Instead we open the spreadsheet directly and let the next get_sheet()
+    call re-populate its own cache entry naturally.
+    """
     try:
         get_sheet(name)
+        return  # sheet already exists, nothing to do
     except Exception:
+        pass
+    # Sheet doesn't exist yet — create it without touching the resource cache.
+    try:
         ss = get_spreadsheet()
         ws = ss.add_worksheet(title=name, rows=rows, cols=cols)
         ws.append_row(header)
-        get_sheet.clear()
+        # Do NOT call get_sheet.clear() — only invalidate the single entry
+        # for this sheet name so the next get_sheet(name) re-fetches it.
+        # gspread cache_resource is keyed per worksheet_name; we bypass it
+        # by calling the underlying spreadsheet directly above, so no clear needed.
+    except Exception:
+        pass  # sheet may have been created by a concurrent session; silently ignore
 
 
 # ── Payment Codes ──────────────────────────────────────────────
@@ -154,9 +170,18 @@ def _settings_ws():
 
 def _settings_ws_live():
     """Always returns a fresh worksheet handle — bypasses cache_resource.
-    Use this for reads that must reflect recent writes immediately."""
+    Use this for reads that must reflect recent writes immediately.
+
+    Falls back to the cached handle if a live fetch fails, so a transient
+    network hiccup never wipes the active-program state.
+    """
     _ensure_sheet("Settings", 10, 2, ["key", "value"])
-    return get_spreadsheet().worksheet("Settings")
+    try:
+        return get_spreadsheet().worksheet("Settings")
+    except Exception:
+        # Transient failure — fall back to cached handle rather than
+        # letting _ensure_sheet recreate the sheet with blank data.
+        return get_sheet("Settings")
 
 
 # ── Active Week ────────────────────────────────────────────────

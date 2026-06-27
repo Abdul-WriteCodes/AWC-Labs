@@ -16,6 +16,11 @@ def logout():
     st.session_state["participant"] = None
     st.session_state["logged_in"] = False
     st.session_state["is_admin"] = False
+    # Clear program-state keys so the next login always re-reads from the
+    # sheet instead of inheriting stale session values.
+    for key in ("_active_program_id", "_active_unit_label",
+                "active_week", "active_week_last_check"):
+        st.session_state.pop(key, None)
 
 
 def is_logged_in() -> bool:
