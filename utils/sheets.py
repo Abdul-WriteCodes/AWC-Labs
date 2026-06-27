@@ -10,7 +10,6 @@ SCOPES = [
 
 @st.cache_resource
 def get_spreadsheet():
-    """Cache both the client AND the spreadsheet object — avoids open_by_key() on every call."""
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
     )
@@ -20,8 +19,18 @@ def get_spreadsheet():
 
 @st.cache_resource
 def get_sheet(worksheet_name: str):
-    """Cache worksheet objects — avoids metadata fetch on every call."""
     return get_spreadsheet().worksheet(worksheet_name)
+
+
+def _ensure_sheet(name: str, rows: int, cols: int, header: list) -> None:
+    """Create a worksheet with header if it doesn't exist."""
+    try:
+        get_sheet(name)
+    except Exception:
+        ss = get_spreadsheet()
+        ws = ss.add_worksheet(title=name, rows=rows, cols=cols)
+        ws.append_row(header)
+        get_sheet.clear()
 
 
 # ── Payment Codes ──────────────────────────────────────────────
@@ -85,7 +94,6 @@ def register_participant(data: dict):
 
 
 def get_participant_cached(email: str) -> dict | None:
-    """Reuses the get_all_participants cache — avoids a separate API call."""
     records = get_all_participants()
     for row in records:
         if str(row.get("email", "")).strip().lower() == email.strip().lower():
@@ -100,7 +108,6 @@ def get_participant(email: str) -> dict | None:
 # ── Progress ───────────────────────────────────────────────────
 
 def get_progress_from_sheet(email: str) -> dict:
-    """Live read — called once per session on first dashboard load."""
     records = get_sheet(WS_PROGRESS).get_all_records()
     progress = {}
     for row in records:
@@ -113,7 +120,6 @@ def get_progress_from_sheet(email: str) -> dict:
 
 def mark_task_done(email: str, week: int, task_index: int, completed_at: str):
     get_sheet(WS_PROGRESS).append_row([email, week, task_index, completed_at])
-    # Update session state immediately so UI reflects without re-fetch
     if "progress" not in st.session_state:
         st.session_state["progress"] = {}
     st.session_state["progress"].setdefault(week, [])
@@ -126,145 +132,137 @@ def get_all_progress() -> list[dict]:
     return get_sheet(WS_PROGRESS).get_all_records()
 
 
+def wipe_all_progress():
+    """Delete all data rows from Progress sheet (keep header). Used when switching programs."""
+    ws = get_sheet(WS_PROGRESS)
+    all_values = ws.get_all_values()
+    if len(all_values) > 1:
+        ws.delete_rows(2, len(all_values))
+    get_all_progress.clear()
+
+
+# ── Settings helpers ───────────────────────────────────────────
+# Settings sheet layout:
+#   B1 = active_week  (int)
+#   B2 = active_program_id  (str)
+#   B3 = active_unit_label  (str, e.g. "Week" / "Day" / "Module")
+
+def _settings_ws():
+    _ensure_sheet("Settings", 10, 2, ["key", "value"])
+    return get_sheet("Settings")
+
+
 # ── Active Week ────────────────────────────────────────────────
 
 @st.cache_data(ttl=30)
 def get_active_week() -> int:
-    """Short cache — admin changes reflect within 30 seconds."""
     try:
-        val = get_sheet("Settings").acell("B1").value
+        val = _settings_ws().acell("B1").value
         return int(val) if val else 1
     except Exception:
         return 1
 
 
 def set_active_week(week: int):
-    """Write active week to Settings sheet and bust the read cache. Raises on failure so caller can show error."""
-    ws = get_sheet("Settings")
-    ws.update(range_name="B1", values=[[week]])
-    # Bust the cached value so the next get_active_week() call returns the new week immediately.
+    _settings_ws().update(range_name="B1", values=[[week]])
     get_active_week.clear()
 
 
-# ── Active week helper (no cache — always live) ────────────────
-
 def get_active_week_live() -> int:
-    """Always reads from sheet directly. No cache."""
     try:
-        val = get_sheet("Settings").acell("B1").value
+        val = _settings_ws().acell("B1").value
         return int(val) if val else 1
     except Exception:
         return 1
 
 
-# ── Prompts ────────────────────────────────────────────────────
+# ── Active Program ─────────────────────────────────────────────
 
-def get_prompt(week: int) -> str:
-    """Return the reflection prompt for a given week. Empty string if not set."""
+@st.cache_data(ttl=30)
+def get_active_program_id() -> str:
     try:
-        records = get_sheet("Prompts").get_all_records()
-        for row in records:
-            if int(row.get("week", 0)) == week:
-                return str(row.get("prompt", "")).strip()
+        val = _settings_ws().acell("B2").value
+        return str(val).strip() if val else ""
     except Exception:
-        pass
-    return ""
+        return ""
 
 
-def set_prompt(week: int, prompt: str):
-    """Upsert the reflection prompt for a week."""
-    ws = get_sheet("Prompts")
-    records = ws.get_all_records()
-    for i, row in enumerate(records, start=2):
-        if int(row.get("week", 0)) == week:
-            ws.update_cell(i, 2, prompt)
-            return
-    ws.append_row([week, prompt])
+def set_active_program(program_id: str, unit_label: str):
+    ws = _settings_ws()
+    ws.update(range_name="B2", values=[[program_id]])
+    ws.update(range_name="B3", values=[[unit_label]])
+    get_active_program_id.clear()
+    get_active_unit_label.clear()
+    # Reset active week to 1 whenever program switches
+    ws.update(range_name="B1", values=[[1]])
+    get_active_week.clear()
 
 
-# ── Reflections ────────────────────────────────────────────────
-
-def get_reflection(email: str, week: int) -> dict | None:
-    """Return the participant's reflection for a week, or None."""
+@st.cache_data(ttl=30)
+def get_active_unit_label() -> str:
     try:
-        records = get_sheet("Reflections").get_all_records()
-        for row in records:
-            if (str(row.get("email", "")).strip().lower() == email.strip().lower()
-                    and int(row.get("week", 0)) == week):
-                return row
+        val = _settings_ws().acell("B3").value
+        return str(val).strip() if val else "Week"
     except Exception:
-        pass
-    return None
+        return "Week"
 
 
-def submit_reflection(email: str, week: int, response: str, submitted_at: str):
-    get_sheet("Reflections").append_row([email, week, response, submitted_at])
-    # Cache in session so UI updates immediately
-    key = f"reflection_{week}"
-    st.session_state[key] = {"email": email, "week": week, "response": response, "submitted_at": submitted_at, "feedback": ""}
+# ── Programs registry ──────────────────────────────────────────
+
+def _ensure_programs_sheet():
+    _ensure_sheet("Programs", 100, 4, ["program_id", "name", "unit_label", "created_at"])
 
 
-@st.cache_data(ttl=60)
-def get_all_reflections() -> list[dict]:
+@st.cache_data(ttl=30)
+def get_all_programs() -> list[dict]:
     try:
-        return get_sheet("Reflections").get_all_records()
+        _ensure_programs_sheet()
+        return get_sheet("Programs").get_all_records()
     except Exception:
         return []
 
 
-# ── Feedback ───────────────────────────────────────────────────
-
-def get_feedback(email: str, week: int) -> str:
-    """Return admin feedback for a participant's week reflection."""
-    try:
-        records = get_sheet("Feedback").get_all_records()
-        for row in records:
-            if (str(row.get("email", "")).strip().lower() == email.strip().lower()
-                    and int(row.get("week", 0)) == week):
-                return str(row.get("feedback", "")).strip()
-    except Exception:
-        pass
-    return ""
+def create_program(program_id: str, name: str, unit_label: str, created_at: str):
+    _ensure_programs_sheet()
+    get_sheet("Programs").append_row([program_id, name, unit_label, created_at])
+    get_all_programs.clear()
 
 
-def save_feedback(email: str, week: int, feedback: str, written_at: str):
-    """Upsert admin feedback for a participant + week."""
-    ws = get_sheet("Feedback")
-    records = ws.get_all_records()
-    for i, row in enumerate(records, start=2):
-        if (str(row.get("email", "")).strip().lower() == email.strip().lower()
-                and int(row.get("week", 0)) == week):
-            ws.update_cell(i, 3, feedback)
-            ws.update_cell(i, 4, written_at)
-            return
-    ws.append_row([email, week, feedback, written_at])
+def delete_program(program_id: str):
+    """Delete program from registry and all its content rows."""
+    # Remove from Programs sheet
+    ws = get_sheet("Programs")
+    all_values = ws.get_all_values()
+    rows_to_delete = []
+    for i, row in enumerate(all_values[1:], start=2):
+        if row and str(row[0]).strip() == program_id:
+            rows_to_delete.append(i)
+    for r in reversed(rows_to_delete):
+        ws.delete_rows(r)
+    get_all_programs.clear()
+
+    # Remove its content
+    _delete_program_content(program_id)
 
 
-@st.cache_data(ttl=60)
-def get_all_feedback() -> list[dict]:
-    try:
-        return get_sheet("Feedback").get_all_records()
-    except Exception:
-        return []
-
-
-# ── Program Content (dynamic weeks + activities) ───────────────
+# ── Program Content ────────────────────────────────────────────
+# ProgramContent sheet columns: program_id | week | type | order | value | extra
 
 WS_PROGRAM = "ProgramContent"
 
-@st.cache_data(ttl=30)
-def get_program_weeks_from_sheet() -> dict:
-    """
-    Load all weeks + their materials and tasks from the ProgramContent sheet.
-    Returns a dict shaped like PROGRAM_WEEKS in data/content.py.
-    Falls back to empty dict on error.
 
-    Sheet columns: week | type | order | value | extra
-      type = "title" | "theme" | "material" | "task"
-      order = sort order within the week for materials/tasks
-      value = the text
-      extra = material type icon key (book/video/article/worksheet/template) — only for "material" rows
+def _ensure_program_content_sheet():
+    _ensure_sheet(WS_PROGRAM, 1000, 6,
+                  ["program_id", "week", "type", "order", "value", "extra"])
+
+
+@st.cache_data(ttl=30)
+def get_program_weeks(program_id: str) -> dict:
     """
+    Load weeks + materials + tasks for a specific program_id.
+    Returns dict keyed by week number.
+    """
+    _ensure_program_content_sheet()
     try:
         records = get_sheet(WS_PROGRAM).get_all_records()
     except Exception:
@@ -272,6 +270,8 @@ def get_program_weeks_from_sheet() -> dict:
 
     weeks: dict = {}
     for row in records:
+        if str(row.get("program_id", "")).strip() != program_id:
+            continue
         w = int(row.get("week", 0))
         if w == 0:
             continue
@@ -291,74 +291,151 @@ def get_program_weeks_from_sheet() -> dict:
     return weeks
 
 
-def save_program_week(week: int, title: str, theme: str, materials: list[dict], tasks: list[str]):
-    """
-    Full replace of a week's rows in ProgramContent.
-    Deletes all existing rows for `week`, then appends fresh ones.
-    """
+def save_program_week(program_id: str, week: int, title: str, theme: str,
+                      materials: list[dict], tasks: list[str]):
+    """Full replace of a single week's rows for a given program."""
+    _ensure_program_content_sheet()
     ws = get_sheet(WS_PROGRAM)
     all_values = ws.get_all_values()
-    if not all_values:
-        # Create header row
-        ws.append_row(["week", "type", "order", "value", "extra"])
-        all_values = [["week", "type", "order", "value", "extra"]]
 
-    # Find and delete rows belonging to this week (bottom-up to preserve indices)
     rows_to_delete = []
     for i, row in enumerate(all_values[1:], start=2):
         try:
-            if int(row[0]) == week:
+            if str(row[0]).strip() == program_id and int(row[1]) == week:
                 rows_to_delete.append(i)
         except (ValueError, IndexError):
             pass
-    for row_i in reversed(rows_to_delete):
-        ws.delete_rows(row_i)
+    for r in reversed(rows_to_delete):
+        ws.delete_rows(r)
 
-    # Append fresh rows
     new_rows = [
-        [week, "title",  0, title, ""],
-        [week, "theme",  0, theme, ""],
+        [program_id, week, "title",  0, title, ""],
+        [program_id, week, "theme",  0, theme, ""],
     ]
     for idx, mat in enumerate(materials):
-        new_rows.append([week, "material", idx, mat.get("label", ""), mat.get("type", "article")])
+        new_rows.append([program_id, week, "material", idx, mat.get("label", ""), mat.get("type", "article")])
     for idx, task in enumerate(tasks):
-        new_rows.append([week, "task", idx, task, ""])
+        new_rows.append([program_id, week, "task", idx, task, ""])
 
     if new_rows:
         ws.append_rows(new_rows, value_input_option="RAW")
 
-    get_program_weeks_from_sheet.clear()
+    get_program_weeks.clear()
 
 
-def delete_program_week(week: int):
-    """Remove all rows for a week from ProgramContent."""
+def delete_week_from_program(program_id: str, week: int):
+    """Remove all rows for a specific week inside a program."""
     ws = get_sheet(WS_PROGRAM)
     all_values = ws.get_all_values()
     rows_to_delete = []
     for i, row in enumerate(all_values[1:], start=2):
         try:
-            if int(row[0]) == week:
+            if str(row[0]).strip() == program_id and int(row[1]) == week:
                 rows_to_delete.append(i)
         except (ValueError, IndexError):
             pass
-    for row_i in reversed(rows_to_delete):
-        ws.delete_rows(row_i)
-    get_program_weeks_from_sheet.clear()
+    for r in reversed(rows_to_delete):
+        ws.delete_rows(r)
+    get_program_weeks.clear()
 
 
-def get_total_weeks_from_sheet() -> int:
-    """Derive total weeks from whatever is in ProgramContent."""
-    weeks = get_program_weeks_from_sheet()
-    return max(weeks.keys()) if weeks else 0
-
-
-def ensure_program_content_sheet():
-    """Create ProgramContent sheet with header if it doesn't exist yet."""
+def _delete_program_content(program_id: str):
+    """Remove ALL content rows for a program (used when deleting a program)."""
     try:
-        get_sheet(WS_PROGRAM)
+        ws = get_sheet(WS_PROGRAM)
+        all_values = ws.get_all_values()
+        rows_to_delete = []
+        for i, row in enumerate(all_values[1:], start=2):
+            if row and str(row[0]).strip() == program_id:
+                rows_to_delete.append(i)
+        for r in reversed(rows_to_delete):
+            ws.delete_rows(r)
+        get_program_weeks.clear()
     except Exception:
-        ss = get_spreadsheet()
-        ws = ss.add_worksheet(title=WS_PROGRAM, rows=500, cols=5)
-        ws.append_row(["week", "type", "order", "value", "extra"])
-        # Invalidate the cached worksheet object so next call re-fetches
-        get_sheet.clear()
+        pass
+
+
+# ── Prompts ────────────────────────────────────────────────────
+
+def get_prompt(week: int) -> str:
+    try:
+        records = get_sheet("Prompts").get_all_records()
+        for row in records:
+            if int(row.get("week", 0)) == week:
+                return str(row.get("prompt", "")).strip()
+    except Exception:
+        pass
+    return ""
+
+
+def set_prompt(week: int, prompt: str):
+    ws = get_sheet("Prompts")
+    records = ws.get_all_records()
+    for i, row in enumerate(records, start=2):
+        if int(row.get("week", 0)) == week:
+            ws.update_cell(i, 2, prompt)
+            return
+    ws.append_row([week, prompt])
+
+
+# ── Reflections ────────────────────────────────────────────────
+
+def get_reflection(email: str, week: int) -> dict | None:
+    try:
+        records = get_sheet("Reflections").get_all_records()
+        for row in records:
+            if (str(row.get("email", "")).strip().lower() == email.strip().lower()
+                    and int(row.get("week", 0)) == week):
+                return row
+    except Exception:
+        pass
+    return None
+
+
+def submit_reflection(email: str, week: int, response: str, submitted_at: str):
+    get_sheet("Reflections").append_row([email, week, response, submitted_at])
+    key = f"reflection_{week}"
+    st.session_state[key] = {"email": email, "week": week, "response": response,
+                              "submitted_at": submitted_at, "feedback": ""}
+
+
+@st.cache_data(ttl=60)
+def get_all_reflections() -> list[dict]:
+    try:
+        return get_sheet("Reflections").get_all_records()
+    except Exception:
+        return []
+
+
+# ── Feedback ───────────────────────────────────────────────────
+
+def get_feedback(email: str, week: int) -> str:
+    try:
+        records = get_sheet("Feedback").get_all_records()
+        for row in records:
+            if (str(row.get("email", "")).strip().lower() == email.strip().lower()
+                    and int(row.get("week", 0)) == week):
+                return str(row.get("feedback", "")).strip()
+    except Exception:
+        pass
+    return ""
+
+
+def save_feedback(email: str, week: int, feedback: str, written_at: str):
+    ws = get_sheet("Feedback")
+    records = ws.get_all_records()
+    for i, row in enumerate(records, start=2):
+        if (str(row.get("email", "")).strip().lower() == email.strip().lower()
+                and int(row.get("week", 0)) == week):
+            ws.update_cell(i, 3, feedback)
+            ws.update_cell(i, 4, written_at)
+            return
+    ws.append_row([email, week, feedback, written_at])
+
+
+@st.cache_data(ttl=60)
+def get_all_feedback() -> list[dict]:
+    try:
+        return get_sheet("Feedback").get_all_records()
+    except Exception:
+        return []
