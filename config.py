@@ -18,7 +18,7 @@ ADMIN_PASSWORD       = st.secrets["admin"]["password"]
 
 # ── Program ───────────────────────────────────────────────────
 PROGRAM_NAME         = "Crea8it AI Career Launch Program"
-TOTAL_WEEKS          = 6
+TOTAL_WEEKS          = 6   # fallback — actual total is derived from ProgramContent sheet
 BOOK_PRICE           = "₦5,000"
 
 # ── Cohort control (admin sets this in the app) ───────────────
