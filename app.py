@@ -42,7 +42,7 @@ else:
   </div>
   <div style="font-size:0.68rem;color:#4A6080;text-transform:uppercase;
               letter-spacing:0.12em;margin-top:4px;font-family:'DM Mono',monospace;">
-    AI Career Launch Program
+    Build • Launch • Learn • Win
   </div>
 </div>
         """, unsafe_allow_html=True)
