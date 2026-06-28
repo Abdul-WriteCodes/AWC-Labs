@@ -222,6 +222,10 @@ def get_active_week() -> int:
         return 1
 
 
+# Alias for backwards compatibility with dashboard.py and other pages
+get_active_week_live = get_active_week
+
+
 def set_active_week(week: int):
     _ap_ws().update("A3", [[week]])
     get_active_week.clear()
