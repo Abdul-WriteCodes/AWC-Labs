@@ -318,6 +318,52 @@ nav{
     display:block;
 }
 
+.cred-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+    margin:20px 0 24px;
+}
+
+.cred-item{
+    background:rgba(255,183,3,.06);
+    border:1px solid rgba(255,183,3,.18);
+    border-radius:12px;
+    padding:14px 16px;
+}
+
+.cred-num{
+    font-family:'Permanent Marker',cursive;
+    font-size:1.6rem;
+    color:var(--accent);
+    line-height:1;
+    margin-bottom:4px;
+}
+
+.cred-label{
+    font-size:0.75rem;
+    color:var(--muted);
+    line-height:1.3;
+}
+
+/* Difference section — tighter right box */
+.graffiti-box{
+    border:2px dashed var(--accent);
+    border-radius:24px;
+    padding:36px;
+    font-family:'Permanent Marker',cursive;
+    font-size:1.6rem;
+    line-height:1.6;
+    transform:rotate(-1deg);
+    background:rgba(255,183,3,.03);
+}
+
+@media(max-width:768px){
+    .cred-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
 .badge{
     display:inline-block;
     background:rgba(255,183,3,.15);
@@ -870,23 +916,19 @@ and real-world lessons to launch careers, build products, and grow startups.
 
 <h2 class="section-title">The Crea8it Way</h2>
 
-<p style="color:var(--muted);font-size:1.1rem;">
-No fake guru tactics. No clout-chasing content. No theory without skin in the game.
-While most builder communities teach from slides, we build in public. 
-Every framework here came from an actual launch. 
-Every lesson was paid for with real time, real money, or real failure. The strategies work because they're still being tested — right now, on live products, with paying customers.
-This isn't a course. It's an ecosysem with a dedicated lab. And the experiments never stop.
+<p style="color:var(--muted);font-size:1.05rem;line-height:1.8;">
+No fake guru tactics. No clout-chasing content. No theory without skin in the game.<br><br>
+While most builder communities teach from slides, we build in public. Every framework here came from an actual launch. Every lesson was paid for with real time, real money, or real failure.<br><br>
+The strategies work because they're still being tested — right now, on live products, with paying customers. This isn't a course. It's a growing ecosystem with a dedicated lab. And the experiments never stop.
 </p>
-
 </div>
 
 <div class="graffiti-box">
-The Crea8it Way<br><br>
 → Build ⚙️<br>
 → Launch 🚀<br>
 → <s>Fail</s> Learn 🤸<br>
 → Win 🏆<br>
-→ Do it Again 🦾<br>
+→ Do it Again 🦾
 </div>
 
 </div>
@@ -900,21 +942,33 @@ The Crea8it Way<br><br>
 <div>
 <h2 class="section-title">Meet the Builder</h2>
 
-<p style="color:var(--muted);">
+<p style="color:var(--muted);font-size:1rem;line-height:1.8;margin-bottom:20px;">
+Before Crea8it had a name, I had already helped 2 people break into tech from scratch. No program. No curriculum. Just what I knew, applied to their situation. Both of them made it work 🚀. That told me the approach was real. So I built a system around it.
+</p>
 
-Before Crea8it had a name, I had already helped 2 people break into tech from scratch. No program. No curriculum 📑. 
-Just what I knew 🧠 and used, but adapte and applied to their situation. Both of them made it work 🚀.
-That told me the approach was real and works with the right mindset and discipline👍. So I built a system around it.<br><br>
+<div class="cred-grid">
+    <div class="cred-item">
+        <div class="cred-num">2×</div>
+        <div class="cred-label">Bootstrap founder<br>building in public</div>
+    </div>
+    <div class="cred-item">
+        <div class="cred-num">10+</div>
+        <div class="cred-label">Years as a<br>researcher</div>
+    </div>
+    <div class="cred-item">
+        <div class="cred-num">2</div>
+        <div class="cred-label">Published books<br>on AI</div>
+    </div>
+    <div class="cred-item">
+        <div class="cred-num">10+</div>
+        <div class="cred-label">Production apps<br>shipped & live</div>
+    </div>
+</div>
 
-    
-I'm Abdul — 2× bootstrap founder, researcher of 10+ years, and author of two books on AI (Enter AI and Talk to the Machine). 
-Right now I'm actively building and selling SaaS products — BizTrack-OS and StaX360 — to real customers 💰. I've shipped 10+ production apps. 
-Everything I teach inside Crea8it is something I'm either currently doing or have already done and documented.<br><br>
-
-
-I started this to help ambitious people build real careers and real income from tech. Not just skills — actual money while solving problems and creating opportunities.
-I'm doing the same thing I'm asking you to do with good faith, grit and resilience in a better way, which means when something stops working, I'll probably know before you do. And when something works, you'll hear about it first.
-🧩Crea8it is the ecosystem I wish had existed when I was starting. Now it does 🚀.
+<p style="color:var(--muted);font-size:1rem;line-height:1.8;">
+I'm Abdul — actively building and selling SaaS products (BizTrack-OS, StaX360) to real customers right now. Everything I teach inside Crea8it is something I'm currently doing or have already done and documented.<br><br>
+I started this to help ambitious people build real careers and real income from tech. Not just skills — actual money. I'm doing the same thing I'm asking you to do. Which means when something stops working, I'll know before you do. And when something works, you'll hear about it first.<br><br>
+Crea8it is the ecosystem I wish had existed when I was starting. Now it does 🚀
 </p>
 
 </div>
