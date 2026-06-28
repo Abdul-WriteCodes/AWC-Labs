@@ -289,14 +289,21 @@ def show():
                         new_mats.append({"label": lbl.strip(), "type": mtp})
 
                 st.markdown("**Activities / Tasks** (up to 10)")
+                st.caption("Add an optional resource link to any task — it becomes clickable on the dashboard.")
                 task_count = st.number_input("How many tasks?", min_value=0, max_value=10,
                                              value=3, key="new_task_count")
                 new_tasks = []
                 for t in range(int(task_count)):
-                    tv = st.text_input(f"Task {t+1}", placeholder="e.g. Complete the worksheet",
-                                       key=f"new_task_{t}")
+                    tc1, tc2 = st.columns([3, 2])
+                    with tc1:
+                        tv = st.text_input(f"Task {t+1}", placeholder="e.g. Complete the worksheet",
+                                           key=f"new_task_{t}")
+                    with tc2:
+                        tl = st.text_input(f"Link {t+1} (optional)", placeholder="https://...",
+                                           key=f"new_task_link_{t}")
                     if tv.strip():
-                        new_tasks.append(tv.strip())
+                        task_text = f"{tv.strip()} [Open →]({tl.strip()})" if tl.strip() else tv.strip()
+                        new_tasks.append(task_text)
 
                 if st.button(f"Save {unit_label}", key="save_new_unit", type="primary"):
                     if not new_title.strip():
@@ -338,15 +345,27 @@ def show():
                                 e_mats.append({"label": ml.strip(), "type": mt})
 
                         st.markdown("**Tasks**")
+                        st.caption("Add an optional resource link — it becomes clickable on the dashboard.")
                         ex_tasks = wdata.get("tasks", [])
                         e_task_n = st.number_input("Number of tasks", min_value=0, max_value=10,
                                                    value=len(ex_tasks), key=f"e_task_n_{w}")
                         e_tasks = []
                         for t in range(int(e_task_n)):
-                            dv = ex_tasks[t] if t < len(ex_tasks) else ""
-                            tv = st.text_input(f"Task {t+1}", value=dv, key=f"e_task_{w}_{t}")
+                            import re as _re
+                            raw = ex_tasks[t] if t < len(ex_tasks) else ""
+                            # Pre-fill: split existing [label](url) back into text + url
+                            m = _re.match(r"^(.*?)\s*\[.*?\]\((https?://[^\)]+)\)\s*$", raw)
+                            dv  = m.group(1).strip() if m else raw
+                            dlnk = m.group(2).strip() if m else ""
+                            tc1, tc2 = st.columns([3, 2])
+                            with tc1:
+                                tv = st.text_input(f"Task {t+1}", value=dv, key=f"e_task_{w}_{t}")
+                            with tc2:
+                                tl = st.text_input(f"Link {t+1} (optional)", value=dlnk,
+                                                   placeholder="https://...", key=f"e_task_link_{w}_{t}")
                             if tv.strip():
-                                e_tasks.append(tv.strip())
+                                task_text = f"{tv.strip()} [Open →]({tl.strip()})" if tl.strip() else tv.strip()
+                                e_tasks.append(task_text)
 
                         col_save, col_del = st.columns([3, 1])
                         with col_save:
