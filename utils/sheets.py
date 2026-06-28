@@ -176,10 +176,21 @@ def _ap_ws():
     return ws
 
 
+def _clean_id(val) -> str:
+    """Convert sheet value to clean string ID — strips float suffix e.g. 87741617.0 -> 87741617."""
+    if val is None:
+        return ""
+    s = str(val).strip()
+    # Google Sheets returns integers as floats (87741617.0) — normalise
+    if s.endswith(".0") and s[:-2].lstrip("-").isdigit():
+        s = s[:-2]
+    return s
+
+
 def get_active_program_id_live() -> str:
     try:
         val = _ap_ws().acell("A1").value
-        return str(val).strip() if val else ""
+        return _clean_id(val)
     except Exception:
         return ""
 
@@ -223,7 +234,7 @@ def set_active_program(program_id: str, unit_label: str):
     Persists across all sessions and survives logout/login/redeploy.
     """
     ws = _ap_ws()
-    ws.update("A1", [[program_id]])
+    ws.update("A1", [[str(program_id)]])  # always write as string, never float
     ws.update("A2", [[unit_label]])
     ws.update("A3", [[1]])
     get_active_program_id.clear()
@@ -242,7 +253,11 @@ def _ensure_programs_sheet():
 def get_all_programs() -> list[dict]:
     try:
         _ensure_programs_sheet()
-        return get_sheet("Programs").get_all_records()
+        records = get_sheet("Programs").get_all_records()
+        # Normalise program_id — gspread may return numeric IDs as floats
+        for r in records:
+            r["program_id"] = _clean_id(r.get("program_id", ""))
+        return records
     except Exception:
         return []
 
