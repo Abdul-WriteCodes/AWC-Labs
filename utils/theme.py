@@ -483,33 +483,61 @@ def week_badge(week_num: int, active_week: int) -> str:
         return '<span class="badge badge-locked">Locked</span>'
 
 
+import re as _re
+
+
+def _render_links(text: str) -> str:
+    """Convert markdown [label](url) and bare URLs into clickable <a> tags.
+    Safe to call on plain text — returns it unchanged if no links found.
+    """
+    ls = "color:var(--teal);text-decoration:underline;"
+    # [label](url) pattern
+    text = _re.sub(
+        r'\[([^\]]+)\]\((https?://[^\)]+)\)',
+        lambda m: '<a href="{u}" target="_blank" rel="noopener" style="{s}">{l}</a>'.format(
+            u=m.group(2), l=m.group(1), s=ls),
+        text
+    )
+    # bare URLs not already inside href="..."
+    text = _re.sub(
+        r'(?<!href=")(https?://\S+)',
+        lambda m: '<a href="{u}" target="_blank" rel="noopener" style="{s}">{u}</a>'.format(
+            u=m.group(1), s=ls),
+        text
+    )
+    return text
+
+
 def task_card(text: str, done: bool):
-    """Render a read-only styled task card (done or pending state)."""
+    """Render a styled task card. Markdown links in text become clickable."""
+    rendered = _render_links(text)
     if done:
         st.markdown(f"""
 <div class="task-card done">
-  <div class="task-icon complete">✓</div>
+  <div class="task-icon complete">&#10003;</div>
   <div class="task-body">
-    <div class="task-text muted">{text}</div>
+    <div class="task-text muted">{rendered}</div>
     <div class="task-status done-label">Completed</div>
   </div>
 </div>""", unsafe_allow_html=True)
     else:
         st.markdown(f"""
 <div class="task-card">
-  <div class="task-icon pending">○</div>
+  <div class="task-icon pending">&#9675;</div>
   <div class="task-body">
-    <div class="task-text">{text}</div>
+    <div class="task-text">{rendered}</div>
     <div class="task-status pending-label">Pending</div>
   </div>
 </div>""", unsafe_allow_html=True)
 
 
 def material_card(icon: str, label: str):
+    """Render a material card. Markdown links in label become clickable."""
+    rendered = _render_links(label)
     st.markdown(f"""
 <div class="mat-card">
   <span class="mat-icon">{icon}</span>
-  <span>{label}</span>
+  <span>{rendered}</span>
 </div>""", unsafe_allow_html=True)
 
 
