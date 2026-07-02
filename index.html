@@ -287,6 +287,29 @@ nav{
     color:#2c2412;
 }
 
+/* ── hero flip effect ── */
+.flip-polaroid .flip-inner{
+    position:relative;
+    width:100%;
+    aspect-ratio:4/5; /* match this to your photo's real w/h ratio, e.g. 1/1 for square, 3/4 for classic portrait */
+    perspective:1000px;
+}
+.flip-polaroid .flip-img{
+    position:absolute;
+    top:0; left:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    opacity:0;
+    transform:rotateY(90deg);
+    transition:transform .6s ease, opacity .3s ease;
+    backface-visibility:hidden;
+}
+.flip-polaroid .flip-img.active{
+    opacity:1;
+    transform:rotateY(0deg);
+}
+
 .index-card{
     position:relative;
     background:var(--paper-dim);
@@ -726,11 +749,14 @@ Crea8it encompasses programs and playbooks that equip builders, founders, and fu
 
 <div class="hero-photo-wrap">
     <div class="hero-sticky hand">10+ apps<br>shipped &amp; live 🚀</div>
-    <div class="polaroid rot--1" style="width:260px;">
+    <div class="polaroid rot--1 flip-polaroid" style="width:260px;" id="heroPolaroid">
         <div class="tape tc"></div>
         <div class="pin"></div>
-        <img src="images/Abd.jpg" alt="Abdul-Azeez Olohunjuwon, founder of Crea8it">
-        <figcaption>the builder, at work</figcaption>
+        <div class="flip-inner">
+            <img src="images/Abdul3.jpg" alt="Abdul-Azeez Olohunjuwon, founder of Crea8it" class="flip-img active">
+            <img src="images/Abd.jpg" alt="Abdul-Azeez Olohunjuwon coding" class="flip-img">
+        </div>
+        <figcaption id="heroCaption">the builder, at work</figcaption>
     </div>
 </div>
 
@@ -1154,6 +1180,31 @@ Got an idea, a project, or something worth addressing? Bring it. Let's have it �
         const priceEl = card.querySelector('.program-price');
         if(priceEl) buildCountdown(priceEl, launchDate);
     });
+})();
+</script>
+
+<script>
+(function(){
+    const wrap = document.getElementById('heroPolaroid');
+    if(!wrap) return;
+
+    const imgs = wrap.querySelectorAll('.flip-img');
+    const captionEl = document.getElementById('heroCaption');
+    if(imgs.length < 2) return;
+
+    // captions shown per image, in order (edit these to match your photos)
+    const captions = ['the builder, at work', 'deep in the code'];
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduceMotion) return; // leave the first image static, no flipping
+
+    let current = 0;
+    setInterval(function(){
+        imgs[current].classList.remove('active');
+        current = (current + 1) % imgs.length;
+        imgs[current].classList.add('active');
+        if(captionEl && captions[current]) captionEl.textContent = captions[current];
+    }, 4000);
 })();
 </script>
 
